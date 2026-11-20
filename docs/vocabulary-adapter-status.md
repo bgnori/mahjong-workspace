@@ -62,7 +62,7 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 
 | リポジトリ | ローカル／共有語彙 | Adapterの有無と範囲 |
 |---|---|---|
-| [mahjong-domain-core](../mahjong-domain-core/) | 共有定義の正本。現状は`Tile`、厳密に2枚を表す`Pair`、順子／刻子形の`Meld`、`Kan.occupiedTiles`、`StandardDecomposition`、`StandardCompletion`を定義します。改定後は共有面子候補を`MentsuCandidate`（`.shuntsu`／`.koutsu`）とし、Pairは`TileCounts`から同種牌2枚を取り出す分解部品として維持します。固定カンは手牌カウントとは別概念です。 | consumer向けAdapterはありません。共通の意味は[Parts.lean](../mahjong-domain-core/MahjongDomain/Parts.lean)と[用語集](../mahjong-domain-core/docs/GLOSSARY.md)に集約されています。`StandardCompletion`の意味・名前の見直しは保留です。 |
+| [mahjong-domain-core](../mahjong-domain-core/) | 共有定義の正本。`Tile`、厳密に2枚を表す`Pair`、`Shuntsu`／`MentsuCandidate`（`.shuntsu`／`.koutsu`）、`Kan.occupiedTiles`、`StandardDecomposition`、`StandardCompletion`を定義します。`Pair.counts_eq_pair_add_remaining`で、2枚以上ある牌種からPairを選んだ残余カウントとの再構成を保証します。固定カンは手牌カウントとは別概念です。 | consumer向けAdapterはありません。共通の意味は[Parts.lean](../mahjong-domain-core/MahjongDomain/Parts.lean)と[用語集](../mahjong-domain-core/docs/GLOSSARY.md)に集約されています。`StandardCompletion`の意味・名前の見直しは保留です。 |
 | [mahjong-wait-classification](../mahjong-wait-classification/) | [Basic.lean](../mahjong-wait-classification/Mahjong/Basic.lean)に`Suit`、`Honor`、`Tile`、独自の`PhysicalTile`等、[Pattern.lean](../mahjong-wait-classification/Mahjong/Pattern.lean)に意図を持って命名された`Toitsu`、`Shuntsu`、`MentsuCandidate`があります。待ち分解・待ち核などはこのプロジェクト固有で、共有しない分類ロジックです。 | **あり（移行用）。** 現在の`DomainAdapter.lean`／`PartsAdapter.lean`で対応を証明しています。移行時はCore定義の利用へ切り替え、同じ概念のlocal定義とAdapterを最終的に削除します。待ち分類で吟味済みの語は、共有名を決める際の有力な指針です。 |
 | [mahjong-shanten-calculation](../mahjong-shanten-calculation/) | [Core.lean](../mahjong-shanten-calculation/Shanten/Core.lean)に独自の`Suit`、`Tile`、`TileCounts`、副露を意味しない`Meld`、牌multiset関数があります。`Hand`はカウントと固定面子数だけを持つ抽象状態です。`Capacity.FixedMeld`は標準形または槓を固定文脈として持ちます。 | **あり（移行用）。** [`DomainAdapter.lean`](../mahjong-shanten-calculation/Shanten/DomainAdapter.lean)が牌・カウント・面子・完成仕様を接続し、`Input37`の一部写像もCoreへ委譲しています。Core定義へ直接移行した後、重複型・wrapper・Adapterを整理する対象です。 |
 
@@ -70,7 +70,7 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 
 - 牌種・スート・牌種カウント、牌表現、面子形などの重複定義がconsumerに残っています。現Adapterは意味対応の証拠として有用ですが、最終的な重複解消ではCore型へ直接移行し、local宣言と移行用Adapterを削除します。
 - 既存`Toitsu`↔`Pair` adapterの往復定理は、両者が「ちょうど2枚」を表すため成立します。改定後もPairの意味は広げず、同種牌が3枚・4枚あるときは`TileCounts`から2枚を選び、残りを別に保ちます。
-- Coreの現行`Meld`は副露状態を持たない順子／刻子形なので`MentsuCandidate`へ改名し、wait-classification由来の`.shuntsu`／`.koutsu`語彙を採用します。関係述語など、構造型とは異なる概念は必要に応じて別に定義します。
+- Coreでは共有`Meld`を`MentsuCandidate`へ改名し、共有`Shuntsu`と`.shuntsu`／`.koutsu`語彙を実装しました。Shantenに残るローカルな順子／刻子形は、後続移行でこのAPIへ接続します。関係述語など、構造型とは異なる概念は必要に応じて別に定義します。
 - シャンテンの`Hand`は共通の物理牌手ではなくカウント状態です。待ち分類の物理的`Hand`はconsumer固有で共有化しにくく、Coreに移す対象は`Hand`そのものではなく牌・物理ID等の部品です。
 - 待ち分類固有の待ち・和了構成部品・待ち核など、およびシャンテン計算固有の手牌、容量・探索仕様は共通面子語彙と同じ概念ではありません。ローカルにあることだけを理由に共通化対象とは判断できません。
 
@@ -83,7 +83,7 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 | 対応する名前 | 一致度・根拠 | 改名を検討する場合 |
 |---|---|---|
 | Core `Pair` ↔ 待ち分類 `Toitsu` | **同義対応。** どちらも同一牌種ちょうど2枚を表します。3枚・4枚の手牌中の同種牌は`TileCounts`に保持し、そこから2枚をPairとして分解します。Shantenの`pairCount`は2枚以上の牌種数であり、Pairの構造体ではありません。固定槓は手牌カウントとは異なる`FixedMeld.kan`です。 | `Toitsu`とCore `Pair`の全値往復を維持します。Shantenでは`pairCount`を「対子数」と読み替えず、牌種数を数える独自の計算として保ちます。固定槓は独立した固定面子として対応させ、手の内の4枚カウントから槓へ変換しません。 |
-| 待ち分類 `MentsuCandidate` ↔ Core/Shanten `Meld` | **順子・刻子形は対応し、名前とAPIをwait-classification側へ統一。** wait-classificationの候補は`.shuntsu`（`Shuntsu`）または`.koutsu`（牌種）です。Shanten/Coreの`.sequence`／`.triplet`も、現状は副露状態を持たない同じ標準形を表します。 | Coreは`Shuntsu`と`MentsuCandidate`を定義し、`.shuntsu`／`.koutsu`を公開constructor名にします。副露・槓を含むGo入力の`Meld`とは統合しません。 |
+| 待ち分類/Core `MentsuCandidate` ↔ Shanten `Meld` | **順子・刻子形は対応し、Core API名はwait-classification側へ統一済み。** 候補は`.shuntsu`（共有`Shuntsu`）または`.koutsu`（牌種）です。Shantenの`.sequence`／`.triplet`も、副露状態を持たない同じ標準形を表します。 | Coreの`Shuntsu`・`MentsuCandidate`・`.shuntsu`／`.koutsu`を実装済みです。Shantenのlocal型とAdapterを後続移行し、副露・槓を含むGo入力の`Meld`とは統合しません。 |
 | Core/Shanten `Tile.suited` ↔ 待ち分類 `Tile.numbered` | **同じ牌種集合を指すが、注目点が異なる。** どちらもスートとランクで表す27種類の数牌で、adapterは直接対応させています。`.numbered`は数牌としての構造、`.suited`はスートを持つ牌としての構造を前面に出します。 | Coreの統一名はCoreの表現責務とwait-classificationでの命名意図を合わせて決めます。単にconsumer間で使われている数だけを根拠に`.suited`へ寄せず、どちらがCoreのwhatを最も明確に示すかを検討します。 |
 | Core `Suit.man/pin/sou` ↔ 待ち分類 `Suit.Manzu/Pinzu/Souzu` | **同じスート要素。** 3つのスートが要素ごとに双方向対応し、adapterの往復定理があります。違いは略記と日本語ローマ字表記です。 | 公開名は改名可能です。名前の明瞭さで迷う場合はwait-classificationの`Manzu/Pinzu/Souzu`を優先候補とし、Core内の順序・表記仕様と整合させます。 |
 | Core `Int37Index.tile` ↔ Shanten `Input37.normalizeTile`、および Core `Tile.int37Index` ↔ Shanten `Input37.normalIndex` | **同じ写像。** 前者は37スロットから牌種へ、後者は牌種からInt37スロットへ写します。Shanten側の関数はCore写像を利用するwrapperです。 | CoreがTenhou/Int37/Int34を所有する方針に従い、consumerはCoreのrepresentationを直接利用します。意味確認用adapterは移行中のみ残し、利用側wrapper・重複名は直接移行後に削除します。Go実装もCoreのスロット順・容量・赤5規約に追随します。 |
@@ -144,8 +144,8 @@ Goの`Meld.Tiles`はそのセットが占有する牌のInt37カウントです�
 
 ### 着手可否
 
-**着手可能です。** 共有面子API、厳密な2枚としての`Pair`、`TileCounts`からのPair分解、
-手の内4枚と固定槓の区別が決まり、Coreのモデルを実装する前提は揃っています。
+**Core APIは実装済みです（Lean build未確認）。** 共有面子API、厳密な2枚としての`Pair`、
+`TileCounts`からのPair分解、手の内4枚と固定槓の区別をCoreの型・定理に反映しました。
 `Completion`の統一・改名は独立した後続課題とし、今回の移行を止めません。互換性aliasは
 前提にしません。
 
@@ -153,24 +153,24 @@ Goの`Meld.Tiles`はそのセットが占有する牌のInt37カウントです�
 consumer側の同義定義とAdapterを、決定したCore APIへ段階的に移す後続計画です
 （[W7までの計画](../mahjong-shanten-calculation/docs/project/SHARED_DOMAIN_EXTRACTION_PLAN_2026-11-17.md)、
 [残存候補一覧](../mahjong-shanten-calculation/docs/project/CORE_EXTRACTION_CANDIDATES_2026-11-20.md)）。
-以前の計画にあるLean consumer API維持の前提は、今回決定した`Meld`／`Pair`の意味・名前に
+以前の計画にあるLean consumer API維持の前提は、今回決定した旧`Meld`／`Pair`の意味・名前に
 限り適用せず、互換aliasなしの改名を許容します。分類の出力順・結果、意味上の保証、
 Goの公開契約は引き続き維持します。
 
 ### 段階
 
-1. **Coreの共有APIを実装する。**
+1. **[実装済み・検証待ち] Coreの共有APIを実装する。**
    - `Meld`を`MentsuCandidate`へ置き換え、共有`Shuntsu`と`.shuntsu`／`.koutsu`
-     constructorを定義します。型に連動するmultiset展開・リスト集約・分解定理も同じAPIへ
-     揃えます。
-   - `Pair`と`Pair.tiles`は厳密に2枚のまま保ちます。`TileCounts tile ≥ 2`のとき、
-     2枚の`Pair`と残りのカウントに分解できる関係・定理を用意します。3枚・4枚を
-     `Pair`へ格納する型や、手の内の4枚を`Kan`に変換する仕組みは追加しません。
+     constructorを定義しました。`MentsuCandidate.tiles`、`MentsuCandidateList`の展開・集約、
+     `StandardDecomposition`の分解定理も新APIへ揃えました。
+   - `Pair`と`Pair.tiles`は厳密に2枚のまま維持し、`Pair.counts_eq_pair_add_remaining`で
+     `TileCounts`からPairを選び、残余と合わせて元のカウントを再構成できることを証明しました。
+     3枚・4枚を`Pair`へ格納する型や、手の内の4枚を`Kan`に変換する仕組みは追加していません。
    - `TileCounts`は汎用カウントとして保ち、物理牌上限4は有効な手牌・表現の制約として
      別に扱います。`Kan`は固定4枚の独立した意味を保ちます。
-   - **完了条件:** 標準形の面子展開が順子3枚／刻子3枚であること、Pair展開が2枚で
-     あること、カウントからPairを選んだとき残余を含め元のカウントを再構成できること、
-     固定`Kan`が4枚で手の内カウントと同一視されないことをLean定理・例で確認します。
+   - **完了条件:** 標準形候補の展開が3枚、Pair展開が2枚、カウントの再構成が成立し、
+     固定`Kan`の占有枚数が4枚であることをLean buildで確認します。Pair分解は`TileCounts`上で行い、
+     固定`Kan`と同一視する変換は定義していません。
 
 2. **wait-classificationを移行する。**
    - `PartsAdapter.lean`の`Toitsu`・`MentsuCandidate`対応をCore型へ切り替えます。

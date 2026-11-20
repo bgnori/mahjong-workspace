@@ -1,0 +1,45 @@
+{
+  "name": "Mahjong workspace",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "6gb"
+  },
+  "runArgs": [
+    "--cpus=2",
+    "--memory=6g"
+  ],
+  "mounts": [
+    "source=mahjong-elan-cache,target=/home/vscode/.elan,type=volume",
+    "source=${localEnv:HOME}/.cache/mathlib,target=/home/vscode/.cache/mathlib,type=bind"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.24.12"
+    }
+  },
+  "containerEnv": {
+    "LEAN_NUM_THREADS": "2",
+    "MATHLIB_CACHE_DIR": "/home/vscode/.cache/mathlib",
+    "MATHLIB_NO_CACHE_ON_UPDATE": "1"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "leanprover.lean4"
+      ],
+      "settings": {
+        "lean4.serverEnv": {
+          "PATH": "${containerEnv:PATH}"
+        },
+        "editor.unicodeHighlight.ambiguousCharacters": false
+      }
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteUser": "vscode"
+}

@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "name": "mahjong",
+      "path": "."
+    }
+  ],
+  "extensions": {
+    "recommendations": [
+      "leanprover.lean4",
+      "golang.go"
+    ]
+  }
+}

@@ -90,6 +90,30 @@ Int37の写像のように実装が既に共有されているものは、名前
 正しさはあまり変わりません。一方、公開型名やconstructor名を統一する場合は、既存利用者
 への互換性方針が作業量を左右します。
 
+## 同じ語の意味衝突
+
+ここでは同じ名前が異なる型・プロジェクトで異なる範囲を指すケースを挙げます。
+「意味が違う」には、概念そのものが違う場合と、同じ概念の異なる抽象レベル・証拠形式を
+指す場合があります。前者は型名の明確化を優先し、後者は文書・修飾語による区別を基本とします。
+
+| 語 | 用法ごとの意味 | 誤読リスクと改名案 |
+|---|---|---|
+| **Meld / 面子** | Goの[`Meld`](../mahjong-shanten-calculation/shanten.go)は固定済みの入力セットで、`Chi`・`Pon`・`Ankan`・`Daiminkan`・`Kakan`と全牌カウントを持ちます。Lean共有・Shantenの[`Meld`](../mahjong-domain-core/MahjongDomain/Parts.lean)は3枚の順子／刻子という形だけで、副露状態や槓は表しません。Shantenの`Capacity.FixedMeld`は固定文脈として標準形または槓を包みます。 | **高。** 「副露されたセット」と「面子の形」の混同が実在します。共有Lean型は前節の`MentsuShape`案を優先し、文書では「Go固定`Meld`」「Lean面子形」のように必ず修飾します。Goの公開契約名を変えるかは別途互換性判断が必要です。 |
+| **Hand / 手牌** | 待ち分類の[`Hand`](../mahjong-wait-classification/Mahjong/Hand.lean)は重複しない物理牌の有限列で、枚数は1/4/7/10/13枚です。Shantenの[`Hand`](../mahjong-shanten-calculation/Shanten/Core.lean)は正規化牌種カウントと固定面子数だけを持つ抽象状態で、物理牌や固定面子の牌内容は持ちません。Goは`Hand`型でなく、`Input.Standing`と`Input.Melds`に分けています。 | **高。** 同じ「手牌」でも実牌を保持する手と、向聴計算用の集約状態は別物です。Leanの名前空間は異なるため直ちに型衝突はしませんが、説明・APIでは「物理手牌」と「Shanten状態」を使い分けます。型を改めるなら待ち分類を`PhysicalHand`、Shantenを`HandState`等とする案がありますが、広範囲の利用箇所を伴うため第一段階では文書上の修飾を推奨します。 |
+| **Pair / 対子・雀頭・pair count** | Coreの[`Pair`](../mahjong-domain-core/MahjongDomain/Parts.lean)は通常形の雀頭として選ぶ同一牌2枚です。Shantenの`Taatsu.pair`は未完成分解における対子形搭子です。さらにShantenの[`pairCount`](../mahjong-shanten-calculation/Shanten/Core.lean)は「2枚以上ある牌種の種類数」を数え、4枚の牌種も1と数えます。七対子の7対は別の構造条件です。 | **中〜高。** 「対子の組数」と`pairCount`を誤読しやすい点は識別子で改善できます。`pairCount`は`pairedTileKindCount` / `pairKindCount`への改名候補です。`.pair` constructorは形の種類を指すので、必要なら`pairTaatsu`、雀頭の文脈は`headPair`と修飾できます。 |
+| **Complete / Completion / 完成** | Coreの`StandardCompletion`は、指定カウントと面子数に一致する分解証人を持つ`Prop`です。待ち分類の[`WaitCompletion`](../mahjong-wait-classification/Mahjong/WaitCompletion.lean)は待ち牌と和了構成部品列を持つデータ値です。Shantenの[`Complete`](../mahjong-shanten-calculation/Shanten/Specification.lean)は面子手・七対子・国士無双のいずれかの構造条件で、枚数制限等も含みます。Goの結果値では完成がシャンテン`-1`です。 | **中。** 命題・証人データ・数値結果が同じ語幹で表されています。正確さのため、説明では`StandardCompletion`（分解仕様）、`WaitCompletion`（待ちごとの和了構成データ）、`Complete shape hand`（Shanten述語）と完全名・形を明記します。単語だけを取り出した一括改名はしません。Wait側は`WaitCompletionWitness`のような案もありますが、現時点では修飾語で十分です。 |
+| **Tenpai / テンパイ** | 待ち分類の[`IsTenpai`](../mahjong-wait-classification/Mahjong/WaitCompletionFinder.lean)は、合法枚数の通常形牌姿に、加えると通常形和了となる候補牌が少なくとも1つあることです。Shantenでは「tenpai」は`shanten = 0`（完成までの構造距離から1を引いた値）を指し、総合値は七対子・国士無双も候補にできます。仕様の遷移はドローまたは交換であり、待ち牌列挙そのものではありません。 | **高。** 通常形の具体的な待ちと、各形の構造的シャンテン値0は対象範囲が異なります。型名を無理に統一せず、「通常形待ち（wait-classification）」と「Shanten値0（structural tenpai）」を使い分け、待ち枚数・役・山の残りと混同しない説明を維持します。 |
+| **Wait / 待ち** | 待ち分類の[`Wait`](../mahjong-wait-classification/Mahjong/WaitCompletionFinder.lean)は、候補牌と`IsWaitFor`証明を一体にした値です。`waitingTiles`は候補牌の列挙、`WaitCompletion.wait`と`WaitCore.wait`はその牌種値を保持します。 | **中。** 候補牌、証拠、列挙処理が同じ語根で現れます。`Wait`は証拠型であることを文書では明示し、改名する場合は`WaitWitness`が候補です。フィールド`wait`は牌種を保持するため、`waitTile`の方が自己説明的です。既存のnamespaceとコメントで区別できる場合、即時改名の必要性は低いです。 |
+| **Core / core** | `mahjong-domain-core`のCoreは共有ドメインライブラリです。一方、待ち分類の[`WaitCore`](../mahjong-wait-classification/Mahjong/WaitDecompositionCode.lean)は待ち牌と残存成分列の組で、数学的なkernelではありません。さらに`WaitCoreExtraction.core`は待ち牌を含まず、除去後に残った成分列だけです。 | **中。** `WaitCore`全体と`.core`フィールドの範囲が違い、同一モジュール内でも取り違えやすいです。型`WaitCore`はドメイン限定名として維持可能ですが、フィールド`.core`は`coreComponents`または`remainingComponents`への改名候補です。文書で「共有Core」と「待ち核」を必ず区別します。 |
+| **Tile / Tiles / 牌** | Leanの`Tile`は3プロジェクトとも原則として正規化された牌種です。物理的な1枚は待ち分類の`PhysicalTile`や共有の`PhysicalTileId`で別表現です。一方Goの`Meld.Tiles`は牌の列でなく、赤5を分ける`Counts37`カウントベクトルです。 | **中。** `Tile`と物理牌の違いは用語集に既出ですが、Goフィールド名`Tiles`は実体がカウントであることを隠します。契約の互換性を保つ間はコメント・文書で「牌カウント」と明記し、次の破壊的API更新では`Meld.TileCounts`または`Counts`を候補にします。 |
+
+### 同名語の対応方針
+
+- 意味範囲が異なる`Meld`、`Hand`、`Tenpai`は、実装や文書でプロジェクト・モデル名を添えます。特に共有Leanの`Meld`改名は既述の最優先候補です。
+- 既存名で表現できるが誤読しやすい識別子（`pairCount`、`WaitCoreExtraction.core`、Goの`Meld.Tiles`）は、公開API互換性を見ながら個別に改名候補とします。コードを変えない場合でも、現行の型・フィールドの実体をコメントに書く価値があります。
+- 命題と証拠データのように同じ領域の隣接概念である`Complete`/`Completion`は、単語の統一より完全修飾名と値の形（述語・証拠・数値）を説明する方が安全です。
+- 今回の調査では識別子・APIを変更していません。文書のみ更新し、候補ごとの互換性・範囲を記録しています。
+
 ## Lean以外の公開型について
 
 確認したGoソースには`DomainAdapter`または`MahjongDomain`への接続がありません。

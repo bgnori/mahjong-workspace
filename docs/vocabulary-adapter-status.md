@@ -144,7 +144,7 @@ Goの`Meld.Tiles`はそのセットが占有する牌のInt37カウントです�
 
 ### 着手可否
 
-**Core APIは実装済みです（Lean build未確認）。** 共有面子API、厳密な2枚としての`Pair`、
+**Core APIは実装済みです（Lean build確認済み）。** 共有面子API、厳密な2枚としての`Pair`、
 `TileCounts`からのPair分解、手の内4枚と固定槓の区別をCoreの型・定理に反映しました。
 `Completion`の統一・改名は独立した後続課題とし、今回の移行を止めません。互換性aliasは
 前提にしません。
@@ -159,7 +159,7 @@ Goの公開契約は引き続き維持します。
 
 ### 段階
 
-1. **[実装済み・検証待ち] Coreの共有APIを実装する。**
+1. **[完了] Coreの共有APIを実装する。**
    - `Meld`を`MentsuCandidate`へ置き換え、共有`Shuntsu`と`.shuntsu`／`.koutsu`
      constructorを定義しました。`MentsuCandidate.tiles`、`MentsuCandidateList`の展開・集約、
      `StandardDecomposition`の分解定理も新APIへ揃えました。
@@ -168,9 +168,9 @@ Goの公開契約は引き続き維持します。
      3枚・4枚を`Pair`へ格納する型や、手の内の4枚を`Kan`に変換する仕組みは追加していません。
    - `TileCounts`は汎用カウントとして保ち、物理牌上限4は有効な手牌・表現の制約として
      別に扱います。`Kan`は固定4枚の独立した意味を保ちます。
-   - **完了条件:** 標準形候補の展開が3枚、Pair展開が2枚、カウントの再構成が成立し、
-     固定`Kan`の占有枚数が4枚であることをLean buildで確認します。Pair分解は`TileCounts`上で行い、
-     固定`Kan`と同一視する変換は定義していません。
+   - **検証:** 標準形候補の展開が3枚、Pair展開が2枚、カウントの再構成が成立し、
+     固定`Kan`の占有枚数が4枚であることを、一時作業コピーでの`lake build --wfail`で確認しました。
+     Pair分解は`TileCounts`上で行い、固定`Kan`と同一視する変換は定義していません。
 
 2. **wait-classificationを移行する。**
    - `PartsAdapter.lean`の`Toitsu`・`MentsuCandidate`対応をCore型へ切り替えます。

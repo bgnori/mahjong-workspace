@@ -193,7 +193,8 @@ Goの公開契約は引き続き維持します。
 3. **Shantenの基礎型・証明を移行する。**
    - **進捗:** `DomainAdapter`の面子対応と容量付き完成証明をCoreの
      `MentsuCandidate` APIに追随させ、全値往復と牌カウント・通常完成の対応を
-     維持しました。`Input37`のゼロ集約の証明も現行Coreに追随しています。
+     維持し、往復と牌展開に`sorryAx`検査を追加しました。`Input37`のゼロ集約の
+     証明も現行Coreに追随しています。
      ローカル型の直接置換と後続の探索・入力変換の移行は未完了です。
    - `Shanten.Core`と`Shanten.DomainAdapter`から始め、ローカル`Meld`と牌種型をCore型へ
      接続します。`pairTiles`はCore `Pair.tiles`に基づけ、`pairCount`は「2枚以上ある牌種の

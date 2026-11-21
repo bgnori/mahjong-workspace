@@ -63,7 +63,7 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 |---|---|---|
 | [mahjong-domain-core](../mahjong-domain-core/) | 共有定義の正本。`Tile`、厳密に2枚を表す`Pair`、`Shuntsu`／`MentsuCandidate`（`.shuntsu`／`.koutsu`）、`Kan.occupiedTiles`、`StandardDecomposition`、`StandardCompletion`を定義します。`Pair.counts_eq_pair_add_remaining`で、2枚以上ある牌種からPairを選んだ残余カウントとの再構成を保証します。固定カンは手牌カウントとは別概念です。 | consumer向けAdapterはありません。共通の意味は[Parts.lean](../mahjong-domain-core/MahjongDomain/Parts.lean)と[用語集](../mahjong-domain-core/docs/GLOSSARY.md)に集約されています。`StandardCompletion`の意味・名前の見直しは保留です。 |
 | [mahjong-wait-classification](../mahjong-wait-classification/) | [Basic.lean](../mahjong-wait-classification/Mahjong/Basic.lean)に`Suit`、`Honor`、`Tile`、独自の`PhysicalTile`等、[Pattern.lean](../mahjong-wait-classification/Mahjong/Pattern.lean)に意図を持って命名された`Toitsu`、`Shuntsu`、`MentsuCandidate`があります。待ち分解・待ち核などはこのプロジェクト固有で、共有しない分類ロジックです。用語集は[こちら](../mahjong-wait-classification/docs/GLOSSARY.md)です。 | **あり（移行用）。** 現在の`DomainAdapter.lean`／`PartsAdapter.lean`で対応を証明しています。移行時はCore定義の利用へ切り替え、同じ概念のlocal定義とAdapterを最終的に削除します。待ち分類で吟味済みの語は、共有名を決める際の有力な指針です。 |
-| [mahjong-shanten-calculation](../mahjong-shanten-calculation/) | Coreの`Suit`、`Tile`、`TileCounts`、`MentsuCandidate`を直接使います。`Hand`はカウントと固定面子数だけを持つ抽象状態です。`Capacity.FixedMeld`は標準形または槓を固定文脈として持ちます。用語集は[こちら](../mahjong-shanten-calculation/docs/GLOSSARY.md)です。 | 型変換Adapterは削除済み。通常完成の対応定理は`Specification.lean`にあり、`Input37`の写像はCoreへ委譲します。`Input37`の名前付きwrapper整理は後続ステップの対象です。 |
+| [mahjong-shanten-calculation](../mahjong-shanten-calculation/) | Coreの`Suit`、`Tile`、`TileCounts`、`MentsuCandidate`を直接使います。`Hand`はカウントと固定面子数だけを持つ抽象状態です。`Capacity.FixedMeld`は標準形または槓を固定文脈として持ちます。用語集は[こちら](../mahjong-shanten-calculation/docs/GLOSSARY.md)です。 | 型変換Adapterと`Input37`の重複wrapperは削除済み。`Int37Counts`、`Int37Index.tile`、`Int37Index.capacity`、`aggregateInt37`を直接使います。通常完成の対応定理は`Specification.lean`にあります。 |
 
 ## 重複と意味差
 
@@ -85,9 +85,9 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 | 待ち分類/Core `MentsuCandidate` ↔ Shanten `Meld` | **順子・刻子形は対応し、Core API名はwait-classification側へ統一済み。** 候補は`.shuntsu`（共有`Shuntsu`）または`.koutsu`（牌種）です。Shantenの`.sequence`／`.triplet`も、副露状態を持たない同じ標準形を表します。 | Coreの`Shuntsu`・`MentsuCandidate`・`.shuntsu`／`.koutsu`を実装済みです。Shantenのlocal型とAdapterを後続移行し、副露・槓を含むGo入力の`Meld`とは統合しません。 |
 | Core/Shanten `Tile.suited` ↔ 待ち分類 `Tile.numbered` | **同じ牌種集合を指すが、注目点が異なる。** どちらもスートとランクで表す27種類の数牌で、adapterは直接対応させています。`.numbered`は数牌としての構造、`.suited`はスートを持つ牌としての構造を前面に出します。 | Coreの統一名はCoreの表現責務とwait-classificationでの命名意図を合わせて決めます。単にconsumer間で使われている数だけを根拠に`.suited`へ寄せず、どちらがCoreのwhatを最も明確に示すかを検討します。 |
 | Core `Suit.man/pin/sou` ↔ 待ち分類 `Suit.Manzu/Pinzu/Souzu` | **同じスート要素。** 3つのスートが要素ごとに双方向対応し、adapterの往復定理があります。違いは略記と日本語ローマ字表記です。 | 公開名は改名可能です。名前の明瞭さで迷う場合はwait-classificationの`Manzu/Pinzu/Souzu`を優先候補とし、Core内の順序・表記仕様と整合させます。 |
-| Core `Int37Index.tile` ↔ Shanten `Input37.normalizeTile`、および Core `Tile.int37Index` ↔ Shanten `Input37.normalIndex` | **同じ写像。** 前者は37スロットから牌種へ、後者は牌種からInt37スロットへ写します。Shanten側の関数はCore写像を利用するwrapperです。 | CoreがTenhou/Int37/Int34を所有する方針に従い、consumerはCoreのrepresentationを直接利用します。意味確認用adapterは移行中のみ残し、利用側wrapper・重複名は直接移行後に削除します。Go実装もCoreのスロット順・容量・赤5規約に追随します。 |
-| Core `aggregateInt37` ↔ Shanten `Input37.normalizeCounts` | **同じ集約。** 同じ37枠の符号付きカウントを、赤5を通常5へまとめた牌種カウントへ集約します。Shanten wrapperは共有関数を呼び、性質もCore定理へ接続しています。 | 消費側がCoreのInt37/Int34操作を直接使う形へ移行し、wrapperを削除します。Coreを語彙・演算の正本とし、consumerだけに同じ集約定義を残しません。 |
-| Core `Int37Counts` ↔ Shanten Lean `Input37.Counts37` | **完全一致（型alias）。** `Input37.Counts37`は`MahjongDomain.Int37Counts`のabbrevです。Goの`Counts37`は固定長配列`[37]int`という別言語の表現ですが、意味上のスロット順・容量・赤5規約はCore定義に追随させます。 | Lean consumerではCoreの型を直接使い、重複aliasを移行後に削除します。Goではidiomaticな配列表現を維持しても構いませんが、別仕様として独立進化させずCoreの意味に追随します。 |
+| Core `Int37Index.tile` ↔ 旧Shanten `Input37.normalizeTile`、および Core `Tile.int37Index` ↔ 旧Shanten `Input37.normalIndex` | **同じ写像（移行済み）。** 前者は37スロットから牌種へ、後者は牌種からInt37スロットへ写します。Shanten側wrapperは削除され、Core写像を直接使います。 | Go実装もCoreのスロット順・容量・赤5規約に追随します。 |
+| Core `aggregateInt37` ↔ 旧Shanten `Input37.normalizeCounts` | **同じ集約（移行済み）。** 同じ37枠の符号付きカウントを、赤5を通常5へまとめた牌種カウントへ集約します。Shanten側wrapperは削除され、Core関数と定理を直接使います。 | Coreを語彙・演算の正本とし、consumerだけに同じ集約定義を残しません。 |
+| Core `Int37Counts` ↔ 旧Shanten Lean `Input37.Counts37` | **完全一致（移行済み）。** Shanten LeanはCoreの`Int37Counts`を直接使い、重複aliasを削除しました。Goの`Counts37`は固定長配列`[37]int`という別言語の表現ですが、意味上のスロット順・容量・赤5規約はCore定義に追随させます。 | Goではidiomaticな配列表現を維持しても構いませんが、別仕様として独立進化させずCoreの意味に追随します。 |
 | Core `Tile.index` ↔ 待ち分類 `Tile.orderKey` | **値の対応は証明済み、用途に違いあり。** 共有`Fin 34`添字と分類側のソート用`Nat`について、`tileIndex_val`が値の一致を証明します。 | 牌種の安定順・indexはCoreの責務です。consumerはCore添字をソートキーとして使えるため、移行後はローカル`orderKey`定義を削除し、必要な箇所で添字の値を使います。 |
 | Core `PhysicalTileId : Fin 136` ↔ 待ち分類 `PhysicalTile := Tile × Fin 4` | **同じ物理牌を表す別表現。** adapterは牌種とcopyを保存してCoreのTenhou順IDへ写します。Coreは赤5 copy 0を含む規約を所有し、consumerの型定義だけではその規約を表していません。 | Coreの`PhysicalTileId`を利用する方向です。まずadapterで現行Handモデルとの対応を証明し、物理牌型・変換・重複定義を消して直接Core型を使います。Int37/Int34の入出力・集計規則もCoreを正本とし、Goは同じ仕様に合わせます。 |
 | Core `StandardCompletion` ↔ 待ち分類 `WinningPartitionSpec` / `IsStandardAgari` ↔ Shanten `Complete .mentsuHand` | **近縁だが同一ではない。** Coreはカウントと分解証人、待ち分類は牌リストと分割、Shantenは枚数制限・固定面子文脈を含みます。completionの証明形式・目的も異なります。 | ひとつの`Completion`へ無理に統合するのは後回しにします。`Standard` / `Special`だけでは意味が伝わらないため、Coreの仕様が何を保証するかを基に名前を再検討します。各consumerはCoreが定義するwhatを使い、固有の入力条件や計算方法は残します。 |
@@ -198,7 +198,7 @@ Goの公開契約は引き続き維持します。
      `Taatsu`、容量・探索方針などShanten固有モデルは維持しました。
    - 不要になったShanten側の型変換Adapterを削除し、通常完成の対応定理を
      `Specification.lean`で直接証明しました。待ち分類との固定文脈連携も追随しました。
-     `Input37`の名前付きwrapperはステップ5で整理します。
+     `Input37`の`Counts37` aliasと正規化・容量wrapperはステップ5で削除しました。
    - **検証:** 書き込み可能な隔離ビルドでShantenの`lake build`と固定文脈連携
      `w6`の`lake build`が成功し、標準完成・Pair対応を含む`sorryAx`検査と
      既存の探索・固定槓・入力回帰例が通りました。
@@ -214,6 +214,9 @@ Goの公開契約は引き続き維持します。
 5. **移行用Adapter・重複を片付け、文書を揃える。**
    - Core型へ直接切り替わり、往復・意味対応証明が不要になった範囲からadapterとlocal型を
      削除します。未移行の表現変換に使うadapterや、consumer固有の状態・ロジックは残します。
+   - **Shanten Lean側は完了。** Int37の重複alias・写像／容量／集約wrapperと、候補牌展開・
+     カウント変換wrapperを削除し、Core APIを直接使うよう更新しました。wait-classification側の
+     local型・Adapter整理は未完了です。Goとの照合は後続で行います。
    - glossary、API説明、移行状況を実装に合わせて更新し、`Completion`は現行仕様のまま
      別課題として記録します。
    - **完了条件:** Coreとconsumerで同じwhatを表す重複型が対象範囲に残らず、利用中の

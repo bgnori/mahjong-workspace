@@ -173,9 +173,14 @@ Goの公開契約は引き続き維持します。
      Pair分解は`TileCounts`上で行い、固定`Kan`と同一視する変換は定義していません。
 
 2. **wait-classificationを移行する。**
-   - `PartsAdapter.lean`の`Toitsu`・`MentsuCandidate`対応をCore型へ切り替えます。
-     `Toitsu`↔Core `Pair`の全値往復と、面子候補のconstructor・牌カウント対応証明を
-     維持します。
+   - `PartsAdapter.lean`の面子候補対応を、旧Core `Meld`から`Shuntsu`／
+     `MentsuCandidate`へ切り替えました。`Toitsu`↔Core `Pair`と面子候補の全値往復、
+     constructor・牌カウント対応証明を維持しています。通常形完成の接続証明も新Core
+     `StandardDecomposition.mentsuCandidates`に追随しました。
+   - 分類の列挙・順序付き牌列処理は引き続きローカルな部品型を使います。これは
+     Coreの多重集合表現へ出力順を移さないためで、Adapterは共有完成仕様との証明境界に
+     限定しています。分類ロジックをCore型へ直接移す場合は別途変更し、結果順・重複数を
+     保ちます。
    - 分類固有の待ち分解、`WaitCore`、物理的`Hand`はローカルに残します。
      `DomainAdapter`も牌・物理牌など未移行の対応に必要な間は残し、Parts移行だけで
      一括削除しません。

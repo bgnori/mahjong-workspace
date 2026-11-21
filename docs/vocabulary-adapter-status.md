@@ -4,11 +4,10 @@
 
 ## 要約
 
-3リポジトリには、牌・対子・面子に相当する語彙のローカル定義が
-それぞれ残っています。`mahjong-domain-core`には共有Lean定義があり、待ち分類・
-シャンテン計算にも意味対応を確認するAdapterと証明があります。ただし現在のAdapterは
-主に段階移行のための境界であり、最終的にはCoreの定義を直接使ってconsumer側の重複定義・
-Adapterをなくす方針が妥当です。
+`mahjong-domain-core`には共有Lean定義があり、シャンテン計算は牌種・カウント・
+面子候補を直接利用します。待ち分類にはローカル定義と共有仕様へのAdapterが残ります。
+Adapterは段階移行のための境界であり、移行可能な重複定義をCoreの直接利用へ
+収束させる方針です。以下の比較・改名検討には調査時点の記述も含みます。
 
 Coreが「何であるか（what）」を定義し、consumerがそれを用いた探索・分類・評価など
 「どう使うか（how）」を定義します。公開API名の改名に互換性エイリアスは要らない前提で
@@ -19,17 +18,17 @@ consumerはCoreの表現上で必要な処理を定義し、Go実装もそのCor
 
 ## 共有語彙名の再評価
 
-共有`Meld`が表すのは、牌種構成としての刻子または順子です。コンストラクタに
+旧共有`Meld`が表していたのは、牌種構成としての刻子または順子です。コンストラクタに
 副露・暗槓・門前の区別はなく、槓の4枚占有も`Kan.occupiedTiles`として別に
-表現されています。したがって、共有`Meld`は「副露された組」ではありませんが、
-型名だけではその違いが分かりません。
+表現されていました。したがって、旧共有`Meld`は「副露された組」ではありませんが、
+型名だけではその違いが分かりませんでした。
 
-これは用語上の潜在的な問題に留まりません。シャンテン側の
+これは用語上の潜在的な問題に留まりません。当時のシャンテン側の
 [用語集](../mahjong-shanten-calculation/docs/GLOSSARY.md)では、Go契約の固定面子を
 副露・暗槓などの入力済み面子、Leanの`Meld`を探索中の完成面子として別項目で
-説明しています。Goの`Meld`とLeanの`Meld`で意味が異なることも同じ用語集で注意
-されています。共有コア自身の[用語集](../mahjong-domain-core/docs/GLOSSARY.md)も
-現在の項目名を`Standard meld`としていますが、識別子は修飾のない`Meld`です。
+説明していました。Goの`Meld`とLeanの`Meld`で意味が異なることも注意されていました。
+当時の共有コア自身の[用語集](../mahjong-domain-core/docs/GLOSSARY.md)も
+項目名を`Standard meld`としていましたが、識別子は修飾のない`Meld`でした。
 文書の修飾だけでは、型名に接する利用者の誤読を防ぎきれません。
 
 **決定:** Coreの共有型名はwait-classificationの`MentsuCandidate`を採用し、
@@ -64,19 +63,19 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 |---|---|---|
 | [mahjong-domain-core](../mahjong-domain-core/) | 共有定義の正本。`Tile`、厳密に2枚を表す`Pair`、`Shuntsu`／`MentsuCandidate`（`.shuntsu`／`.koutsu`）、`Kan.occupiedTiles`、`StandardDecomposition`、`StandardCompletion`を定義します。`Pair.counts_eq_pair_add_remaining`で、2枚以上ある牌種からPairを選んだ残余カウントとの再構成を保証します。固定カンは手牌カウントとは別概念です。 | consumer向けAdapterはありません。共通の意味は[Parts.lean](../mahjong-domain-core/MahjongDomain/Parts.lean)と[用語集](../mahjong-domain-core/docs/GLOSSARY.md)に集約されています。`StandardCompletion`の意味・名前の見直しは保留です。 |
 | [mahjong-wait-classification](../mahjong-wait-classification/) | [Basic.lean](../mahjong-wait-classification/Mahjong/Basic.lean)に`Suit`、`Honor`、`Tile`、独自の`PhysicalTile`等、[Pattern.lean](../mahjong-wait-classification/Mahjong/Pattern.lean)に意図を持って命名された`Toitsu`、`Shuntsu`、`MentsuCandidate`があります。待ち分解・待ち核などはこのプロジェクト固有で、共有しない分類ロジックです。用語集は[こちら](../mahjong-wait-classification/docs/GLOSSARY.md)です。 | **あり（移行用）。** 現在の`DomainAdapter.lean`／`PartsAdapter.lean`で対応を証明しています。移行時はCore定義の利用へ切り替え、同じ概念のlocal定義とAdapterを最終的に削除します。待ち分類で吟味済みの語は、共有名を決める際の有力な指針です。 |
-| [mahjong-shanten-calculation](../mahjong-shanten-calculation/) | [Core.lean](../mahjong-shanten-calculation/Shanten/Core.lean)に独自の`Suit`、`Tile`、`TileCounts`、副露を意味しない`Meld`、牌multiset関数があります。`Hand`はカウントと固定面子数だけを持つ抽象状態です。`Capacity.FixedMeld`は標準形または槓を固定文脈として持ちます。用語集は[こちら](../mahjong-shanten-calculation/docs/GLOSSARY.md)です。 | **あり（移行用）。** [`DomainAdapter.lean`](../mahjong-shanten-calculation/Shanten/DomainAdapter.lean)が牌・カウント・面子・完成仕様を接続し、`Input37`の一部写像もCoreへ委譲しています。Core定義へ直接移行した後、重複型・wrapper・Adapterを整理する対象です。 |
+| [mahjong-shanten-calculation](../mahjong-shanten-calculation/) | Coreの`Suit`、`Tile`、`TileCounts`、`MentsuCandidate`を直接使います。`Hand`はカウントと固定面子数だけを持つ抽象状態です。`Capacity.FixedMeld`は標準形または槓を固定文脈として持ちます。用語集は[こちら](../mahjong-shanten-calculation/docs/GLOSSARY.md)です。 | 型変換Adapterは削除済み。通常完成の対応定理は`Specification.lean`にあり、`Input37`の写像はCoreへ委譲します。`Input37`の名前付きwrapper整理は後続ステップの対象です。 |
 
 ## 重複と意味差
 
-- 牌種・スート・牌種カウント、牌表現、面子形などの重複定義がconsumerに残っています。現Adapterは意味対応の証拠として有用ですが、最終的な重複解消ではCore型へ直接移行し、local宣言と移行用Adapterを削除します。
+- 待ち分類には牌種・スート・牌表現・面子形の重複定義が残っています。Adapterは意味対応の証拠として有用ですが、移行可能な範囲ではCore型へ直接移行し、local宣言と移行用Adapterを削除します。
 - 既存`Toitsu`↔`Pair` adapterの往復定理は、両者が「ちょうど2枚」を表すため成立します。改定後もPairの意味は広げず、同種牌が3枚・4枚あるときは`TileCounts`から2枚を選び、残りを別に保ちます。
-- Coreでは共有`Meld`を`MentsuCandidate`へ改名し、共有`Shuntsu`と`.shuntsu`／`.koutsu`語彙を実装しました。Shantenに残るローカルな順子／刻子形は、後続移行でこのAPIへ接続します。関係述語など、構造型とは異なる概念は必要に応じて別に定義します。
+- Coreでは共有`Meld`を`MentsuCandidate`へ改名し、共有`Shuntsu`と`.shuntsu`／`.koutsu`語彙を実装しました。ShantenもこのAPIを直接使います。関係述語など、構造型とは異なる概念は必要に応じて別に定義します。
 - シャンテンの`Hand`は共通の物理牌手ではなくカウント状態です。待ち分類の物理的`Hand`はconsumer固有で共有化しにくく、Coreに移す対象は`Hand`そのものではなく牌・物理ID等の部品です。
 - 待ち分類固有の待ち・和了構成部品・待ち核など、およびシャンテン計算固有の手牌、容量・探索仕様は共通面子語彙と同じ概念ではありません。ローカルにあることだけを理由に共通化対象とは判断できません。
 
 ## ほかの対応関係・未決定候補
 
-以下は3リポジトリの宣言とAdapterを比較し、同じ概念または同じ写像を別の名前で
+以下は調査時点の3リポジトリの宣言とAdapterを比較し、同じ概念または同じ写像を別の名前で
 表している項目と、名前の整理が未決定の候補です。Coreの`Pair`と面子語彙は前節で決定
 したため、識別子とAdapterの変更は後続の実装タスクで行います。
 
@@ -190,25 +189,19 @@ Goの公開契約は引き続き維持します。
      `PartsAdapter`変換が通常処理から不要になった範囲だけ削除されていること。
      Go連携がある変更では`go test ./mahjong`も成功すること。
 
-3. **Shantenの基礎型・証明を移行する。**
-   - **進捗:** `DomainAdapter`の面子対応と容量付き完成証明をCoreの
-     `MentsuCandidate` APIに追随させ、全値往復と牌カウント・通常完成の対応を
-     維持し、往復と牌展開に`sorryAx`検査を追加しました。`Input37`のゼロ集約の
-     証明も現行Coreに追随しています。牌種・牌カウントをCore型へ直接切り替え、
-     `pairTiles`をCore `Pair.tiles`に基づけました。探索・固定文脈のローカル
-     `Meld`をCore `MentsuCandidate`へ置換し、対応する証明と入力例を更新しました。
-     恒等変換となったAdapterの整理と連携パッケージの追随は未完了です。
-   - `Shanten.Core`と`Shanten.DomainAdapter`から始め、ローカル`Meld`と牌種型をCore型へ
-     接続します。`pairTiles`はCore `Pair.tiles`に基づけ、`pairCount`は「2枚以上ある牌種の
-     種類数」として独立に維持します。
-   - `MentsuHand`の探索状態・分解・列挙・正当性証明を、新しい面子APIとPair展開定理へ
-     順に移します。その後、`Capacity`と`Input37`の固定文脈・変換証明を追随させます。
-   - `Capacity.FixedMeld.kan`と手の内カウントは分けたままにします。`Hand`、
-     `Taatsu`、容量・探索方針などShanten固有モデルは移行対象に含めません。
-   - 既存のシャンテン値・探索結果・固定面子文脈の意味を維持します。`pairCount`は
-     牌種数を数える別仕様のままとし、`Pair`や七対子の7対と同一視しません。
-   - **完了条件:** 各段階で対応するLakeターゲットが成功し、最終的に`lake build`が成功。
-     Coreとの標準完成・Pair対応定理と既存の証明検査が維持されていること。
+3. **Shantenの基礎型・証明を移行する。完了。**
+   - 牌種・スート・カウントと面子候補をCore型へ直接置換し、`pairTiles`を
+     Core `Pair.tiles`に基づけました。探索状態・分解・列挙・正当性、
+     容量付き固定文脈とInt37の変換・検証証明を更新しました。
+   - `Capacity.FixedMeld.kan`はCoreの固定槓占有を用い、手の内のカウントと
+     区別します。`pairCount`は2枚以上ある牌種の種類数のままです。`Hand`、
+     `Taatsu`、容量・探索方針などShanten固有モデルは維持しました。
+   - 不要になったShanten側の型変換Adapterを削除し、通常完成の対応定理を
+     `Specification.lean`で直接証明しました。待ち分類との固定文脈連携も追随しました。
+     `Input37`の名前付きwrapperはステップ5で整理します。
+   - **検証:** 書き込み可能な隔離ビルドでShantenの`lake build`と固定文脈連携
+     `w6`の`lake build`が成功し、標準完成・Pair対応を含む`sorryAx`検査と
+     既存の探索・固定槓・入力回帰例が通りました。
 
 4. **Go契約をCore仕様と照合する。**
    - Goの`Meld`は固定済み入力契約として維持し、Leanの`MentsuCandidate`へ改名・統合

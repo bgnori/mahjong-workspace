@@ -15,8 +15,8 @@
 - APIの改名に互換aliasは必須ではありません。意味・保証を照合してから切り替えます。
 - Core `Pair`は同一牌種ちょうど2枚です。手牌中の3枚・4枚は`TileCounts`に保持し、
   そこから2枚を選びます。手牌中の4枚を固定`Kan`に変換しません。
-- 順序付き列挙や物理的な手牌などconsumer固有の使い方・状態はconsumerに残します。
-  Coreの`Multiset`を導入するために、順序付き出力を置き換えません。
+- 候補の順序付き列挙や物理的な手牌などconsumer固有の使い方・状態はconsumerに残します。
+  部品を構成する順序付き牌列はCoreを正本とし、分類の順序付き出力を維持します。
 - Tenhou物理牌、Int37、Int34の表現・変換・容量規則はCoreを正本とし、Go実装も意味上
   の仕様に追随します。Goの言語に適した表現や固定済み`Meld`契約は維持します。
 - `Completion`のconsumer横断統一・改名は本計画のブロッカーにせず、別課題として保留します。
@@ -27,7 +27,7 @@
 |---|---|---|
 | `mahjong-domain-core` | **完了** | 共有`Shuntsu`／`MentsuCandidate`と`.shuntsu`／`.koutsu`、厳密な`Pair`、`TileCounts`からのPair分解を実装済み。Core build確認済み。 |
 | `mahjong-shanten-calculation` Lean | **完了** | 牌種・カウント・面子候補をCoreから直接利用。型変換AdapterとInt37重複wrapperを削除し、通常完成の対応定理を更新済み。 |
-| `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの`Pair`、`Shuntsu`、`MentsuCandidate`を直接利用し、local型と`PartsAdapter.lean`を削除。順序付き展開の対応証明・回帰検査・CI不在検査を追加。読解負荷の人手確認は未実施。 |
+| `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの部品型と順序付き展開を利用し、local型と`PartsAdapter.lean`を削除。牌種移行までAdapterで列を変換する。回帰検査・CI不在検査あり。読解負荷の人手確認は未実施。 |
 | `mahjong-wait-classification` 牌・物理牌表現 | **未完了（Adapter経由）** | `Basic.lean`の`Suit`、`Honor`、`Tile`、`PhysicalTile`等と`DomainAdapter.lean`の対応が残る。Coreの牌種・index・`PhysicalTileId`への直接移行を検討し、変換ごとに意味と利用箇所を確認する。 |
 | Go実装 | **照合未完了** | 固定済み`Meld`契約は維持する。牌表現、Tenhou/Int37/Int34の順序、容量、赤5規則、および固定槓とstanding countsの境界をCoreと照合する。 |
 | 不在検査・文書・読解負荷 | **未完了** | 完了した概念ごとのlocal宣言・移行用変換の不在検査、用語資料の同期、代表処理の読みやすさ比較を追加・記録する。 |
@@ -43,10 +43,10 @@ ShantenのLean移行は完了済みです。Go照合はCoreの表現規則に対
 **対象:** `Toitsu`、`Shuntsu`、`MentsuCandidate`、`PartsAdapter.lean`と直接の利用箇所。
 
 1. Coreの`Pair`、`Shuntsu`、`MentsuCandidate`を使うよう利用箇所と通常形接続の証明を切り替える。
-2. Coreの面子展開（`Multiset`）と分類側の順序付き`List Tile`展開の対応を証明する。
-   牌種と多重度の一致を証明し、列順は別の保証として扱う。
+2. Coreの順序付き牌列を正本とし、`Multiset`展開をそこから導出する。
+   牌種Adapter経由の多重度の一致を証明し、列順は別の保証として扱う。
 3. Core型を直接利用できることを確認してからlocal型、`PartsAdapter`の型変換・往復証明を削除する。
-   分類固有の順序付き展開・列挙は残す。
+   分類固有の候補列挙は残す。
 4. 牌列順、候補列挙順、分類ID・結果、重複数について既存回帰例を確認し、不足する境界例を追加する。
 
 **完了条件:** 対象型の重複と不要なParts adapterがなく、Multisetとの対応証明・順序・結果の回帰検査が
@@ -54,15 +54,18 @@ ShantenのLean移行は完了済みです。Go照合はCoreの表現規則に対
 対象宣言の不在検査が追加されていること。代表処理で追う型・変換・証明の数と変換段数を移行前後で
 比較し、式や証明が複雑化していないかも確認すること。
 
-**実施結果:** 3型をCoreから直接利用し、`PartsAdapter.lean`を削除した。分類側の
-順序付き展開から牌種Adapterを通してCore `Multiset`へ写す等式を、Pair、順子、面子候補に
-ついて証明した。牌種Adapterは段階2まで残す。候補の列挙順、端の順子、刻子、
+**実施結果:** 3型をCoreから直接利用し、`PartsAdapter.lean`を削除した。当初は部品ごとの
+順序付き展開と対応証明が分類側に残っていたが、Coreの`orderedTiles`を正本にし、
+`tiles`をそこから導出した。分類側は牌種Adapterで列を写し、共通の計数補題を利用する。
+`Pattern.lean`のAdapter定義・証明は`DomainAdapter.lean`へ移した。`Basic.lean`には
+`Tile.format`が使う基本変換が残る。牌種Adapterは段階2まで残す。
+候補の列挙順、端の順子、刻子、
 同一面子の重複と分解順、待ち・分類コードの順序と重複数について回帰例を確認した。
 CIに旧部品型・変換宣言と`PartsAdapter.lean`の不在検査を追加した。
 分類側の`lake build Mahjong MahjongTests`、`go test ./mahjong`、Shantenとの固定文脈連携
 `w6`の`lake build`が隔離環境で成功した。展開対応と通常完成への接続は`sorry`不在も検査する。
 
-**読解負荷の比較:** 対象を`WinningPartitionSpec.toDomainStandardCompletion`から
+**読解負荷の比較（最初の部品型移行時点）:** 対象を`WinningPartitionSpec.toDomainStandardCompletion`から
 Pairと面子候補の共有カウントに至る経路に固定する。型はlocalとCoreのPair・面子候補の
 計4定義からCoreの2定義となった。部品変換は`toDomainDecomposition`、
 `toDomainPair`、`toDomainMentsuCandidates`、`toDomainMentsuCandidate`の4宣言から0となり、
@@ -70,7 +73,8 @@ Pairと面子候補の共有カウントに至る経路に固定する。型はl
 同経路の部品カウント／展開の対応定理は5から6になった（順子単体の展開対応を明示したため）。
 対子の牌展開を探す場合の候補宣言は2から2のままである（移行前はlocalの`Toitsu.tiles`と
 Coreの`Pair.tiles`、移行後は分類側の`ClassificationPair.tiles`とCoreの`Pair.tiles`）。
-移行後の2つは順序付き列と多重集合という異なる出力を持つ。
+その後、順序付き列はCoreを正本にし、分類側の列はその写像となった。部品ごとの
+`orderedTiles_toDomain`対応定理は共通の計数補題に置き換えた。
 これらは代理指標であり、複雑さや読みやすさの人手確認は未実施のため、本段階を最終完了にはしない。
 
 ### 2. wait-classificationの牌・物理牌表現をCoreへ移す
@@ -119,7 +123,7 @@ consumer固有の理由があり、対応する不在検査・回帰検査が通
 ## 対象外・保留
 
 - `Completion`をconsumer横断で統合・改名すること。意味、入力条件、証拠形式が異なるため別課題とします。
-- wait-classification固有の待ち分解、`WaitCore`、物理的`Hand`、順序付き列挙のCore移管。
+- wait-classification固有の待ち分解、`WaitCore`、物理的`Hand`、候補の順序付き列挙のCore移管。
 - Shanten固有の`Hand`、`Taatsu`、容量・探索方針の共有化。
 - Goの固定済み入力契約`Meld`をLeanの標準形候補へ統合すること。
 - 未決定のAPI名を、代表コードの評価・意味確認なしに一括改名すること。

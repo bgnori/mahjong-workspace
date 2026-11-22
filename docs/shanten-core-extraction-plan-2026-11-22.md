@@ -23,6 +23,8 @@ Coreは共有ドメインのwhat、consumerは探索・分類などのhowを担�
 
 ## 現状と候補
 
+この表は計画時点の候補と判断基準です。実施後の状態は次節を参照してください。
+
 | 優先 | 候補と根拠 | 判断・境界 |
 |---|---|---|
 | 1 | [Shanten.Core](../mahjong-shanten-calculation/Shanten/Core.lean)の`orphanKinds`、`kokushiKinds`、`orphanTiles`と[ThirteenOrphans](../mahjong-shanten-calculation/Shanten/ThirteenOrphans.lean)の集合一致・13種・牌数の定理。么九牌の集合そのものは特定の探索方法ではない。 | まず、端の数牌と字牌の判定、13牌種、必要なら各牌種1枚の多重集合をCoreに置くことを検討する。現在は定義上の集合と計算用列挙が別にあり、両者の一致を証明している。計算可能性を失わず、同じ集合を正本から得る。国士のシャンテン式、手牌、完成・探索は移さない。 |
@@ -36,6 +38,39 @@ Shanten側の`Hand`、入力・エラー契約、`ValidHand`、交換・到達�
 シャンテン式・距離・探索・DP・分類は、上のように切り出せる共通部分を除いて
 Shanten側に残す。待ち分類の物理的`Hand`とShantenのカウント状態を統合しない。
 GoはLeanをimportできないため、Goの変更が必要な場合も表現仕様との照合を別途行う。
+
+## 実施結果と保留判断
+
+- **么九牌を抽出:** Coreの`Tile.IsTerminalOrHonor`、計算可能な`orphanKinds`と
+  `orphanTiles`を正本とする。旧`kokushiKinds`と同じ13種を列挙し、
+  `mem_orphanKinds`で全牌種に対する端牌・字牌判定との一致を証明した。
+  集合・多重集合の列挙順は契約しない。国士の完成条件や計算はShantenに残す。
+- **基本則を抽出:** Coreに`TileCounts.ofMultiset_sum_eq_card`と
+  `MentsuCandidateList.tiles_card`を置き、Shantenは既存の`Pair.tiles_card`を含め
+  直接利用する。旧枚数定理と么九牌の重複宣言は削除し、再導入をCIで検査する。
+- **`tileCount`等は現状維持:** 現在の利用はShantenの`Hand`を通じた計算で、
+  `TileCounts`版を追加しwrapperも残すだけでは公開APIが増える。wrapperを除くには
+  手版の利用箇所を切り替える必要があるが、今回共有した枚数定理以上にCoreで
+  保証すべき操作・命名の要件は未確定。直接必要とする利用と併せて再検討する。
+  `pairCount`は同種4枚でも1牌種と数え、Pairの抽出や完成判定とは異なる。
+- **固定牌は保留:** 現型は順子・刻子・槓の形と占有を表すが、鳴きの種類や赤牌の
+  同一性を表さない。Goの固定済み`Meld`とは情報が異なる。自然数の
+  `4 - occupied`は固定牌だけの過剰占有でも0に飽和し、standingとの合計超過も
+  別の上限検証が必要。形・占有を共有する利用と妥当性の境界を明確にしてから再検討する。
+- **搭子は別課題:** 現型は対子と隣接2牌だけで嵌張を含まず、両面では完成候補の
+  一方を選ぶ探索用証人である。待ち分類の待ち種別とは一致しない。共通の不完全部品の
+  範囲と、両面の複数候補・辺牌・重複を含む保証を設計してから再検討する。
+- **特殊形の構成は別課題:** 七対子は7種の異なる対子で、4枚を2対としない。
+  国士は13種に重複1枚を加える。構成と合法性・完成条件の境界やルール前提を
+  consumer間で確定してから抽出する。`Completion`の横断統一・改名は引き続き保留。
+
+読みやすさの人手確認は未実施のまま持ち越す。
+
+**検証:** 書き込み可能な隔離コピーでCoreの`lake build MahjongDomain`、
+Shantenの`lake build`、待ち分類の`lake build Mahjong MahjongTests`、
+固定文脈連携の`w6`で`lake build`が通過した。共有基本則と既存のShanten・
+連携出口定理の`sorry`不在も確認した。Goのコード・契約は変更していない。
+CIがCoreの`main`を参照するため、公開時はCoreを先に反映する。
 
 ## 実施順序
 

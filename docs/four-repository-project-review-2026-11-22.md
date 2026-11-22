@@ -13,7 +13,7 @@
 | ShantenのLean形式化とGo契約 | `mahjong-shanten-calculation` | `be918559edc584102d381e9d5a3f6f81324233f8` |
 | 待ち分類のLean形式化とGo実装 | `mahjong-wait-classification` | `072d116cae1b1cf99a7172aef0e81eebcb4490d3` |
 
-対象はリポジトリ境界、共有ドメインの責務、依存・CI連携、利用者向け文書です。個々の証明やアルゴリズムの網羅的な正当性監査ではありません。
+対象はリポジトリ境界、共有ドメインの責務、依存・CI連携、利用者向け文書です。個々の証明やアルゴリズムの網羅的な正当性監査ではありません。以下には、追加で確認したコード識別子・語彙の読解性に関する所見も記録します。
 
 **総評:** Coreが共通の「what」を持ち、Shantenと待ち分類がそれぞれの「how」を持つ分割は明確です。Leanの共有型を各consumerが直接使い、容量規則や固定槓などの境界も区別されています。CIにもCoreとconsumer間の互換性検査があります。設計を妨げる重大な構造問題は見つかりませんでした。
 
@@ -49,6 +49,44 @@
 - **ドメイン境界:** 1牌種4枚の規則をCoreに置きつつ、固定牌を含めて何を数えるかはconsumer側に残しています。Pair、手牌中の4枚、固定Kan、特殊形の意味を無理に同一化していません。
 - **依存・CI:** consumerのLake設定は兄弟Coreへのpath dependencyを使います。CIはCore変更時にconsumerの`main`を検査し、consumer変更時にもCoreの`main`を検査する構成です。検証したコミットSHAもCI summaryに記録されます。これは変更追従を速める一方、`main`の組合せが時間とともに変わる運用です。資料に記載された移行期の方針として妥当ですが、安定化後に検証済みSHAへ固定する移行条件は継続管理が必要です。
 - **未完了の確認:** 既存の移行資料は、代表処理の読みやすさに関する人手確認を未実施として記録しています。機械検証やビルド成功とは別の確認として残すのが適切です。
+
+## コード語彙・命名の追加所見
+
+この節のコード確認対象は、`mahjong-domain-core` `e9dcbbcd51d649b1ad6a5dbd402bf6835992e720`、`mahjong-shanten-calculation` `be918559edc584102d381e9d5a3f6f81324233f8`、`mahjong-wait-classification` `072d116cae1b1cf99a7172aef0e81eebcb4490d3`です。これは上表の構成レビュー対象とは別の、命名・語彙に限った追補です。
+
+### P3 — `WaitCore`が`WaitDecomposition`の別名で、区別が型に表れない
+
+[WaitDecompositionCode.lean](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitDecompositionCode.lean#L59)では一般の`WaitDecomposition`を定義し、同じファイルで[`WaitCore`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitDecompositionCode.lean#L108)を`WaitDecomposition`の別名としています。コメント上、待ち核は「完成面子を除去済み」の待ち分解ですが、その条件は`waitCores`の生成経路にしかなく、型としては未加工の`WaitDecomposition`と相互に代入可能です。また`WaitCoreExtraction.core`は待ち牌を含まない成分列なので、`core`だけでは値の範囲も分かりにくくなっています。
+
+**影響:** API利用者は名前から別の型・不変条件があると期待しますが、型検査ではその違いを保証できません。
+
+**推奨:** 不変条件を保証したいなら、`WaitCore`を独立した構造体にし、検証証拠または制限した構築経路を持たせます。単なる説明上の別名でよいなら`WaitCore`をなくし、関数名・文書で「完成面子を除去した`WaitDecomposition`」と明示します。どちらの場合も`WaitCoreExtraction.core`は`coreComponents`のように、牌成分の列であることを名前に含めると読みやすくなります。
+
+### P3 — `Hand`がリポジトリごとに異なる表現を指す
+
+Shantenの[`Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Core.lean#L18)は牌種ごとのカウントと固定面子数を持つ計算用状態です。一方、待ち分類の[`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/Hand.lean#L18)は物理牌IDの埋め込みと面子数を持つ牌姿です。どちらも固有の意味はありますが、横断資料や連携コードで`Hand`だけを見ると、カウント表現か物理牌表現か判断できません。
+
+**推奨:** 独立した各プロジェクト内で`Hand`を維持する場合も、共有APIや横断資料では`ShantenHand`／`PhysicalTileHand`など表現を示す名前を使います。両型を同じLean文脈へ導入する場合は、修飾名を明示します。
+
+### P3 — `Standard`／`Special`と`Special.lean`の役割が名前だけでは限定されない
+
+Coreの[`StandardCompletion`](https://github.com/bgnori/mahjong-domain-core/blob/e9dcbbcd51d649b1ad6a5dbd402bf6835992e720/MahjongDomain/Parts.lean#L148)は牌種カウント上の通常形完成仕様で、待ち分類の[`IsStandardAgari`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitCompletionFinder.lean#L380)は牌種列に対する通常形和了判定です。`Standard`は麻雀の通常形を指しますが、その限定は識別子単体には現れません。またShantenの[`Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Special.lean#L4)は七対子・国士無双の式と正しさを扱い、[`Capacity/Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Special.lean#L4)は固定面子がない場合にそれらの計算を呼び出すAPIを扱います。同じ`Special.lean`でも役割が異なります。
+
+**推奨:** 用語を広げるなら`StandardFormCompletion`／`IsStandardFormAgari`、ファイル名は`SpecialShapeFormulas.lean`／`SpecialShapeSearch.lean`のように対象と役割を含めます。Core用語集が定義する`Standard`を維持する場合は、両側の識別子から同じ「通常形」を指すと分かるようにし、初出で用語集へ誘導します。
+
+### P3 — `threeMeldStanding`は名詞の結び付きが分かりにくい
+
+[Capacity/Examples.lean](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Examples.lean#L132)の`threeMeldStanding`は、`Hand`の`fixedMelds`が3の例です。`threeMeld`が固定面子数なのか手牌内の面子数なのか、また`standing`とどう結び付くのかが名前だけでは分かりません。
+
+**推奨:** この値が固定面子3つを持つ手であることを明示する`handWithThreeFixedMelds`が適切です。総面子数を表す意図なら、その数え方を別途名前かコメントで明示します。
+
+### P3 — `MahjongComputations.Common`が異なる責務を一つにまとめている
+
+[Common.lean](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/MahjongComputations/Common.lean#L16)には牌列挙、和了分解のグループ化、待ち核キャッシュと可約性、病理分類、分解関係、表示整形までが置かれています。`Common`は「何の共通処理か」を示さず、目的の宣言を探すにはファイル内容を広く読む必要があります。
+
+**推奨:** 次に整理する機会に、`WaitCompletionGrouping`、`WaitCoreReduction`、`WaitPathology`、`WaitDecompositionReporting`など責務を表すモジュールへ分割します。機械的な一括改名より、実際に共有される関数群を基準に分けるのが安全です。
+
+なお、待ち分類の`WinningPartitionSpec`は牌列と列挙された構成部品の仕様、Coreの`StandardCompletion`はカウントに一致する分解証人の仕様です。対応定理で接続されていますが、表現と用途が異なるため、同じ概念の重複として統合するより、それぞれの境界と変換を維持するのが適切です。
 
 ## 検証
 

@@ -28,10 +28,10 @@ consumerはCoreの表現上で必要な処理を定義し、Go実装もそのCor
 型名だけではその違いが分かりませんでした。
 
 これは用語上の潜在的な問題に留まりません。当時のシャンテン側の
-[用語集](../mahjong-shanten-calculation/docs/GLOSSARY.md)では、Go契約の固定面子を
+[用語集](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/docs/GLOSSARY.md)では、Go契約の固定面子を
 副露・暗槓などの入力済み面子、Leanの`Meld`を探索中の完成面子として別項目で
 説明していました。Goの`Meld`とLeanの`Meld`で意味が異なることも注意されていました。
-当時の共有コア自身の[用語集](../mahjong-domain-core/docs/GLOSSARY.md)も
+当時の共有コア自身の[用語集](https://github.com/bgnori/mahjong-domain-core/blob/7a5ca02386c1c2c3f183decf16726c4442677267/docs/GLOSSARY.md)も
 項目名を`Standard meld`としていましたが、識別子は修飾のない`Meld`でした。
 文書の修飾だけでは、型名に接する利用者の誤読を防ぎきれません。
 
@@ -65,9 +65,9 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 
 | リポジトリ | ローカル／共有語彙 | Adapterの有無と範囲 |
 |---|---|---|
-| [mahjong-domain-core](../mahjong-domain-core/) | 共有定義の正本。`Tile`、厳密に2枚を表す`Pair`、`Shuntsu`／`MentsuCandidate`（`.shuntsu`／`.koutsu`）、`Kan.occupiedTiles`、`StandardDecomposition`、`StandardCompletion`を定義します。`Pair.counts_eq_pair_add_remaining`で、2枚以上ある牌種からPairを選んだ残余カウントとの再構成を保証します。固定カンは手牌カウントとは別概念です。 | consumer向けAdapterはありません。共通の意味は[Parts.lean](../mahjong-domain-core/MahjongDomain/Parts.lean)と[用語集](../mahjong-domain-core/docs/GLOSSARY.md)に集約されています。`StandardCompletion`の意味・名前の見直しは保留です。 |
-| [mahjong-wait-classification](../mahjong-wait-classification/) | [Basic.lean](../mahjong-wait-classification/Mahjong/Basic.lean)に`Suit`、`Honor`、`Tile`、独自の`PhysicalTile`等、[Pattern.lean](../mahjong-wait-classification/Mahjong/Pattern.lean)に意図を持って命名された`Toitsu`、`Shuntsu`、`MentsuCandidate`があります。待ち分解・待ち核などはこのプロジェクト固有で、共有しない分類ロジックです。用語集は[こちら](../mahjong-wait-classification/docs/GLOSSARY.md)です。 | **あり（移行用）。** 現在の`DomainAdapter.lean`／`PartsAdapter.lean`で対応を証明しています。移行時はCore定義の利用へ切り替え、同じ概念のlocal定義とAdapterを最終的に削除します。待ち分類で吟味済みの語は、共有名を決める際の有力な指針です。 |
-| [mahjong-shanten-calculation](../mahjong-shanten-calculation/) | Coreの`Suit`、`Tile`、`TileCounts`、`MentsuCandidate`を直接使います。`Hand`はカウントと固定面子数だけを持つ抽象状態です。`Capacity.FixedMeld`は標準形または槓を固定文脈として持ちます。用語集は[こちら](../mahjong-shanten-calculation/docs/GLOSSARY.md)です。 | 型変換Adapterと`Input37`の重複wrapperは削除済み。`Int37Counts`、`Int37Index.tile`、`Int37Index.capacity`、`aggregateInt37`を直接使います。通常完成の対応定理は`Specification.lean`にあります。 |
+| [mahjong-domain-core](https://github.com/bgnori/mahjong-domain-core/tree/7a5ca02386c1c2c3f183decf16726c4442677267) | 共有定義の正本。`Tile`、厳密に2枚を表す`Pair`、`Shuntsu`／`MentsuCandidate`（`.shuntsu`／`.koutsu`）、`Kan.occupiedTiles`、`StandardDecomposition`、`StandardCompletion`を定義します。`Pair.counts_eq_pair_add_remaining`で、2枚以上ある牌種からPairを選んだ残余カウントとの再構成を保証します。固定カンは手牌カウントとは別概念です。 | consumer向けAdapterはありません。共通の意味は[Parts.lean](https://github.com/bgnori/mahjong-domain-core/blob/7a5ca02386c1c2c3f183decf16726c4442677267/MahjongDomain/Parts.lean)と[用語集](https://github.com/bgnori/mahjong-domain-core/blob/7a5ca02386c1c2c3f183decf16726c4442677267/docs/GLOSSARY.md)に集約されています。`StandardCompletion`の意味・名前の見直しは保留です。 |
+| [mahjong-wait-classification](https://github.com/bgnori/mahjong-wait-classification/tree/59ab79f4e7b11f230408d40a155ed6a9d50056d6) | [Basic.lean](https://github.com/bgnori/mahjong-wait-classification/blob/59ab79f4e7b11f230408d40a155ed6a9d50056d6/Mahjong/Basic.lean)に`Suit`、`Honor`、`Tile`、独自の`PhysicalTile`等、[Pattern.lean](https://github.com/bgnori/mahjong-wait-classification/blob/59ab79f4e7b11f230408d40a155ed6a9d50056d6/Mahjong/Pattern.lean)に意図を持って命名された`Toitsu`、`Shuntsu`、`MentsuCandidate`があります。待ち分解・待ち核などはこのプロジェクト固有で、共有しない分類ロジックです。用語集は[こちら](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/docs/GLOSSARY.md)です。 | **あり（移行用）。** 現在の`DomainAdapter.lean`／`PartsAdapter.lean`で対応を証明しています。移行時はCore定義の利用へ切り替え、同じ概念のlocal定義とAdapterを最終的に削除します。待ち分類で吟味済みの語は、共有名を決める際の有力な指針です。 |
+| [mahjong-shanten-calculation](https://github.com/bgnori/mahjong-shanten-calculation/tree/6c17b4b66ac7c710743b2f7f7ae43c09675f2772) | Coreの`Suit`、`Tile`、`TileCounts`、`MentsuCandidate`を直接使います。`Hand`はカウントと固定面子数だけを持つ抽象状態です。`Capacity.FixedMeld`は標準形または槓を固定文脈として持ちます。用語集は[こちら](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/docs/GLOSSARY.md)です。 | 型変換Adapterと`Input37`の重複wrapperは削除済み。`Int37Counts`、`Int37Index.tile`、`Int37Index.capacity`、`aggregateInt37`を直接使います。通常完成の対応定理は`Specification.lean`にあります。 |
 
 ## 重複と意味差
 
@@ -116,13 +116,13 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 
 | 語 | 用法ごとの意味 | 誤読リスクと改名案 |
 |---|---|---|
-| **Meld / 面子** | Goの[`Meld`](../mahjong-shanten-calculation/shanten.go)は固定済みの入力セットで、`Chi`・`Pon`・`Ankan`・`Daiminkan`・`Kakan`と全牌カウントを持ちます。Lean共有・Shantenの[`Meld`](../mahjong-domain-core/MahjongDomain/Parts.lean)は3枚の順子／刻子という形だけで、副露状態や槓は表しません。Shantenの`Capacity.FixedMeld`は固定文脈として形または槓を包みます。 | **改名先決定済み。** Goの固定セット契約`Meld`は維持し、Core/Leanの標準形候補は`MentsuCandidate`（`.shuntsu`／`.koutsu`）とします。Go実装の牌表現・挙動はCore仕様に追随させます。 |
-| **Hand / 手牌** | 待ち分類の[`Hand`](../mahjong-wait-classification/Mahjong/Hand.lean)は重複しない物理牌の有限列で、枚数は1/4/7/10/13枚です。Shantenの[`Hand`](../mahjong-shanten-calculation/Shanten/Core.lean)は正規化牌種カウントと固定面子数だけを持つ抽象状態で、物理牌や固定面子の牌内容は持ちません。Goの`Input`は手牌相当の要求値で、`Standing`と`Melds`を分けます。 | **高。** Shanten型は`HandState`等の名が候補です。`AbstractHand`は避けます。待ち分類の`Hand`は物理牌を持つconsumer固有モデルで共有化しにくいため、現状名を維持するか、他文脈との混同が実際に問題となれば`ConcreteHand`を検討します。Goの`Input`は境界要求の名前として妥当です。`Standing`は暗槓も除いた手元牌を指す意図的な用語であり、`concealed hand`や非一般的な`Fixed/NonFixed`へ変える理由はありません。 |
-| **Pair / 対子・雀頭・pair count** | Coreの現在の[`Pair`](../mahjong-domain-core/MahjongDomain/Parts.lean)は厳密に2枚です。改定後も意味を維持し、`TileCounts`から同種牌を2枚Pairとして分解します。手の内の4枚は4枚の牌カウントであり、固定された槓ではありません。`Toitsu`とShantenの`Taatsu.pair`も2枚、[`pairCount`](../mahjong-shanten-calculation/Shanten/Core.lean)は「2枚以上ある牌種の種類数」で、七対子の7対とも別概念です。固定槓は`Capacity.FixedMeld.kan`で表します。 | **意味・範囲決定済み。** `Toitsu`とCore `Pair`は同じ2枚概念として全値対応させます。`pairCount`は牌種数を数える別の計算として維持します。`TileCounts`の枚数条件、Pairへの分解、固定槓をそれぞれ区別します。 |
-| **Complete / Completion / 完成** | Coreの現行`StandardCompletion`は、指定カウントと面子数に一致する分解証人を持つ`Prop`です。待ち分類の[`WaitCompletion`](../mahjong-wait-classification/Mahjong/WaitCompletion.lean)は待ち牌と和了構成部品列のデータです。Shantenの[`Complete`](../mahjong-shanten-calculation/Shanten/Specification.lean)は形別の構造条件で、枚数制限等も含みます。Goの結果値では完成時のシャンテンが`-1`です。 | **中。** 目的・証拠形式が異なるため無理な共通名化は後回しです。Core名の`StandardCompletion`も「何がstandardか」を説明で調べさせるため、保証内容を基に再検討します。`Standard` / `Special`を安易に追加せず、Coreのwhatとconsumerの条件・計算法を分けます。 |
-| **Tenpai / テンパイ** | 待ち分類の[`IsTenpai`](../mahjong-wait-classification/Mahjong/WaitCompletionFinder.lean)は、合法な通常形牌姿に通常形待ちが少なくとも1つあることです。Shantenのtenpaiは構造距離に基づく`shanten = 0`で、総合値では七対子・国士無双も候補です。 | **文脈差として正常。** 待ち分類が通常形のみを対象とする前提では`IsTenpai`は適切です。Shantenの値との同一性は主張せず、「通常形待ち」と「Shanten値0」を明記します。 |
-| **Wait / 待ち** | 待ち分類の[`Wait`](../mahjong-wait-classification/Mahjong/WaitCompletionFinder.lean)は、候補牌と`IsWaitFor`証明を一体にした値です。`waitingTiles`は候補牌の列挙、`WaitCompletion.wait`と`WaitCore.wait`はその牌種値を保持します。 | **中。** 候補牌、証拠、列挙処理が同じ語根で現れます。`Wait`は証拠型であることを文書では明示し、改名する場合は`WaitWitness`が候補です。フィールド`wait`は牌種を保持するため、`waitTile`の方が自己説明的です。既存のnamespaceとコメントで区別できる場合、即時改名の必要性は低いです。 |
-| **Core / core** | `mahjong-domain-core`のCoreは共有ドメインライブラリです。一方、待ち分類の[`WaitCore`](../mahjong-wait-classification/Mahjong/WaitDecompositionCode.lean)は待ち牌と残存成分列の組で、数学的なkernelとは異なる分類用語です。`WaitCoreExtraction.core`は抽出後に残った成分列を指します。 | **改名不要。** `WaitCore`は意図して選ばれた分類語彙として維持します。説明ではCoreライブラリと待ち核を区別します。`CoreUtils`等はライブラリ／リポジトリの名前として必要性が確認された場合に限り別途検討します。 |
+| **Meld / 面子** | Goの[`Meld`](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/shanten.go)は固定済みの入力セットで、`Chi`・`Pon`・`Ankan`・`Daiminkan`・`Kakan`と全牌カウントを持ちます。Lean共有・Shantenの[`Meld`](https://github.com/bgnori/mahjong-domain-core/blob/7a5ca02386c1c2c3f183decf16726c4442677267/MahjongDomain/Parts.lean)は3枚の順子／刻子という形だけで、副露状態や槓は表しません。Shantenの`Capacity.FixedMeld`は固定文脈として形または槓を包みます。 | **改名先決定済み。** Goの固定セット契約`Meld`は維持し、Core/Leanの標準形候補は`MentsuCandidate`（`.shuntsu`／`.koutsu`）とします。Go実装の牌表現・挙動はCore仕様に追随させます。 |
+| **Hand / 手牌** | 待ち分類の[`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/59ab79f4e7b11f230408d40a155ed6a9d50056d6/Mahjong/Hand.lean)は重複しない物理牌の有限列で、枚数は1/4/7/10/13枚です。Shantenの[`Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/Shanten/Core.lean)は正規化牌種カウントと固定面子数だけを持つ抽象状態で、物理牌や固定面子の牌内容は持ちません。Goの`Input`は手牌相当の要求値で、`Standing`と`Melds`を分けます。 | **高。** Shanten型は`HandState`等の名が候補です。`AbstractHand`は避けます。待ち分類の`Hand`は物理牌を持つconsumer固有モデルで共有化しにくいため、現状名を維持するか、他文脈との混同が実際に問題となれば`ConcreteHand`を検討します。Goの`Input`は境界要求の名前として妥当です。`Standing`は暗槓も除いた手元牌を指す意図的な用語であり、`concealed hand`や非一般的な`Fixed/NonFixed`へ変える理由はありません。 |
+| **Pair / 対子・雀頭・pair count** | Coreの現在の[`Pair`](https://github.com/bgnori/mahjong-domain-core/blob/7a5ca02386c1c2c3f183decf16726c4442677267/MahjongDomain/Parts.lean)は厳密に2枚です。改定後も意味を維持し、`TileCounts`から同種牌を2枚Pairとして分解します。手の内の4枚は4枚の牌カウントであり、固定された槓ではありません。`Toitsu`とShantenの`Taatsu.pair`も2枚、[`pairCount`](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/Shanten/Core.lean)は「2枚以上ある牌種の種類数」で、七対子の7対とも別概念です。固定槓は`Capacity.FixedMeld.kan`で表します。 | **意味・範囲決定済み。** `Toitsu`とCore `Pair`は同じ2枚概念として全値対応させます。`pairCount`は牌種数を数える別の計算として維持します。`TileCounts`の枚数条件、Pairへの分解、固定槓をそれぞれ区別します。 |
+| **Complete / Completion / 完成** | Coreの現行`StandardCompletion`は、指定カウントと面子数に一致する分解証人を持つ`Prop`です。待ち分類の[`WaitCompletion`](https://github.com/bgnori/mahjong-wait-classification/blob/59ab79f4e7b11f230408d40a155ed6a9d50056d6/Mahjong/WaitCompletion.lean)は待ち牌と和了構成部品列のデータです。Shantenの[`Complete`](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/Shanten/Specification.lean)は形別の構造条件で、枚数制限等も含みます。Goの結果値では完成時のシャンテンが`-1`です。 | **中。** 目的・証拠形式が異なるため無理な共通名化は後回しです。Core名の`StandardCompletion`も「何がstandardか」を説明で調べさせるため、保証内容を基に再検討します。`Standard` / `Special`を安易に追加せず、Coreのwhatとconsumerの条件・計算法を分けます。 |
+| **Tenpai / テンパイ** | 待ち分類の[`IsTenpai`](https://github.com/bgnori/mahjong-wait-classification/blob/59ab79f4e7b11f230408d40a155ed6a9d50056d6/Mahjong/WaitCompletionFinder.lean)は、合法な通常形牌姿に通常形待ちが少なくとも1つあることです。Shantenのtenpaiは構造距離に基づく`shanten = 0`で、総合値では七対子・国士無双も候補です。 | **文脈差として正常。** 待ち分類が通常形のみを対象とする前提では`IsTenpai`は適切です。Shantenの値との同一性は主張せず、「通常形待ち」と「Shanten値0」を明記します。 |
+| **Wait / 待ち** | 待ち分類の[`Wait`](https://github.com/bgnori/mahjong-wait-classification/blob/59ab79f4e7b11f230408d40a155ed6a9d50056d6/Mahjong/WaitCompletionFinder.lean)は、候補牌と`IsWaitFor`証明を一体にした値です。`waitingTiles`は候補牌の列挙、`WaitCompletion.wait`と`WaitCore.wait`はその牌種値を保持します。 | **中。** 候補牌、証拠、列挙処理が同じ語根で現れます。`Wait`は証拠型であることを文書では明示し、改名する場合は`WaitWitness`が候補です。フィールド`wait`は牌種を保持するため、`waitTile`の方が自己説明的です。既存のnamespaceとコメントで区別できる場合、即時改名の必要性は低いです。 |
+| **Core / core** | `mahjong-domain-core`のCoreは共有ドメインライブラリです。一方、待ち分類の[`WaitCore`](https://github.com/bgnori/mahjong-wait-classification/blob/59ab79f4e7b11f230408d40a155ed6a9d50056d6/Mahjong/WaitDecompositionCode.lean)は待ち牌と残存成分列の組で、数学的なkernelとは異なる分類用語です。`WaitCoreExtraction.core`は抽出後に残った成分列を指します。 | **改名不要。** `WaitCore`は意図して選ばれた分類語彙として維持します。説明ではCoreライブラリと待ち核を区別します。`CoreUtils`等はライブラリ／リポジトリの名前として必要性が確認された場合に限り別途検討します。 |
 | **Tile / Tiles / 牌** | Leanの`Tile`は3プロジェクトとも原則として正規化された牌種です。物理的な1枚は待ち分類の`PhysicalTile`や共有の`PhysicalTileId`で別表現です。一方Goの`Meld.Tiles`は牌の列でなく、赤5を分ける`Counts37`カウントベクトルです。 | **中。** Coreが物理牌・Int37/Int34仕様を担い、Goも意味を追随します。Goフィールド`Tiles`はカウント配列だとコメントで明示し、公開API改名が自然な機会に`TileCounts`等を検討します。 |
 
 ### 同名語の対応方針
@@ -138,7 +138,7 @@ GoコードがLeanの型をimportする構成ではありませんが、Tenhou/I
 インデックス順・容量・赤5規則はCoreを正本としてGo実装が追随する方針です。
 Goの`Counts37 [37]int`のような言語に適した表現は維持できます。
 
-Goの[`Meld`](../mahjong-shanten-calculation/shanten.go)はchi・pon・ankan・daiminkan・
+Goの[`Meld`](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/shanten.go)はchi・pon・ankan・daiminkan・
 kakan等の固定済みセットを表す契約型で、Leanの面子形とは意図的に異なります。
 Goの`Meld.Tiles`はそのセットが占有する牌のInt37カウントです。Go名の維持・改名は
 公開契約として別に判断しますが、内容・正規化規則をCoreと独立した定義にしないようにします。
@@ -154,8 +154,8 @@ Goの`Meld.Tiles`はそのセットが占有する牌のInt37カウントです�
 
 これはW0〜W7で完了した共通核の導入・接続をやり直す計画ではなく、W7後に残った
 consumer側の同義定義とAdapterを、決定したCore APIへ段階的に移す後続計画です
-（[W7までの計画](../mahjong-shanten-calculation/docs/project/SHARED_DOMAIN_EXTRACTION_PLAN_2026-11-17.md)、
-[残存候補一覧](../mahjong-shanten-calculation/docs/project/CORE_EXTRACTION_CANDIDATES_2026-11-20.md)）。
+（[W7までの計画](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/docs/project/SHARED_DOMAIN_EXTRACTION_PLAN_2026-11-17.md)、
+[残存候補一覧](https://github.com/bgnori/mahjong-shanten-calculation/blob/6c17b4b66ac7c710743b2f7f7ae43c09675f2772/docs/project/CORE_EXTRACTION_CANDIDATES_2026-11-20.md)）。
 以前の計画にあるLean consumer API維持の前提は、今回決定した旧`Meld`／`Pair`の意味・名前に
 限り適用せず、互換aliasなしの改名を許容します。分類の出力順・結果、意味上の保証、
 Goの公開契約は引き続き維持します。

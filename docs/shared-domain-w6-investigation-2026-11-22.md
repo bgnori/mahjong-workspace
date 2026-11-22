@@ -3,9 +3,9 @@
 調査日: 2026-11-22
 
 対象: [移行前のSharedDomainW6.lean](https://github.com/bgnori/mahjong-shanten-calculation/blob/bbfed07f8de7d437898dd12abc01fe3b4031f516/w6/SharedDomainW6.lean)、
-[待ち分類の探索・仕様](../mahjong-wait-classification/Mahjong/WaitCompletionFinder.lean)、
-[Shantenの固定文脈仕様](../mahjong-shanten-calculation/Shanten/Capacity/Specification.lean)、
-[Coreの部品・通常形分解](../mahjong-domain-core/MahjongDomain/Parts.lean)。
+[待ち分類の探索・仕様](https://github.com/bgnori/mahjong-wait-classification/blob/main/Mahjong/WaitCompletionFinder.lean)、
+[Shantenの固定文脈仕様](https://github.com/bgnori/mahjong-shanten-calculation/blob/main/Shanten/Capacity/Specification.lean)、
+[Coreの部品・通常形分解](https://github.com/bgnori/mahjong-domain-core/blob/main/MahjongDomain/Parts.lean)。
 関連する抽出の現状は[ShantenからCoreへの共有機能抽出計画](./shanten-core-extraction-plan-2026-11-22.md)を参照。
 
 ## 要旨
@@ -40,7 +40,7 @@ Coreの役割は共通の構造・保証を定義することであり、両cons
 枚数を忘れれば、部分形の計算結果だけでは元の全体で何枚加えられるか決まらない
 場合がある。部分形が全体を代表できる条件は必要に応じて明示する。
 
-分類側の[待ち核を保つ面子除去](../mahjong-wait-classification/Mahjong/WaitDecompositionCode.lean)
+分類側の[待ち核を保つ面子除去](https://github.com/bgnori/mahjong-wait-classification/blob/main/Mahjong/WaitDecompositionCode.lean)
 は「自明に分離できる」を考える手掛かりになる。ただし、鳴きなどの固定と
 待ち核を保つ除去が常に同じ意味だとは未決定であり、片方から他方を仮定しない。
 
@@ -96,7 +96,7 @@ W6のA/B例では、分類入力は共通の`111m東`で東待ちとなる。
 分類器はその牌を固定済みと指定する入力を持たず、分解・面子除去の候補として扱う。
 よって、固定牌を連結すれば常にW6と同じ意味になるとはまだ言えない。
 
-分類の[病的構造](../mahjong-wait-classification/README.md)には、牌を除くことで
+分類の[病的構造](https://github.com/bgnori/mahjong-wait-classification/blob/main/README.md)には、牌を除くことで
 枚数制限の影響が結果に現れる例もある。ただし病的構造はconsumerの計算結果を
 調べる話であり、W6や共有ライブラリの整理に際してその結果を先取りして一般化する
 対象とはしない。

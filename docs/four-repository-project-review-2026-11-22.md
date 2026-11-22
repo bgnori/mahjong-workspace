@@ -29,13 +29,13 @@
 
 **推奨:** 待ち分類自身のworkflowに`go test ./...`を追加します。Goの静的検査も他の契約リポジトリと揃えるなら`go vet ./...`も追加します。
 
-### P2 — workspace資料のリポジトリ間相対リンクはGitHub上で解決しない
+### P2 — workspace資料のリポジトリ間リンクをGitHub URLへ修正（対応済み）
 
-横断資料の例として、[語彙移行状況](./vocabulary-adapter-status.md)や[共有ドメイン調査](./shared-domain-w6-investigation-2026-11-22.md)は、`../mahjong-domain-core/...`、`../mahjong-shanten-calculation/...`、`../mahjong-wait-classification/...`への相対リンクを含みます。ローカルの兄弟チェックアウトでは参照できますが、workspaceリポジトリはこれらのディレクトリを`.gitignore`で除外しており、Gitの追跡対象にも含めていません。そのためworkspaceリポジトリのGitHub上で読むと、リンク先が存在しません。履歴資料にも同種のリンクがあります。
+レビュー時点では、横断資料の例として[語彙移行状況](./vocabulary-adapter-status.md)、[共有ドメイン調査](./shared-domain-w6-investigation-2026-11-22.md)、[Shanten抽出計画](./shanten-core-extraction-plan-2026-11-22.md)、および[履歴資料](./vocabulary-adapter-status-2026-11-20-archive.md)が、兄弟リポジトリへの相対リンクを含んでいました。workspaceリポジトリは兄弟ディレクトリを`.gitignore`で除外しているため、GitHub上ではリンク先を解決できませんでした。
 
 **影響:** 横断資料から実装・正本の用語集へ移動できず、ローカル表示と公開表示で文書の有用性が変わります。
 
-**推奨:** 別リポジトリへのリンクはGitHub URLに置き換えます。現行資料は`main`へのリンク、特定時点の調査記録はレビュー済みコミットへのリンクを使い分けると、参照先と履歴性が明確になります。
+**対応:** すべてのリポジトリ間リンクをGitHub URLへ変更しました。現行資料は`main`を参照し、履歴資料は各リポジトリの該当時点のコミットに固定しました。履歴資料の用語集リンクは、そのファイルを含むコミットを参照します。リンク先が指定コミットに存在することも検査しました。
 
 ### P3 — 親フォルダー方式を維持し、ガイドの説明を統一（対応済み）
 

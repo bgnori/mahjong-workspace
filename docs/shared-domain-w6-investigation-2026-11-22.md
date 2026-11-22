@@ -2,7 +2,7 @@
 
 調査日: 2026-11-22
 
-対象: [SharedDomainW6.lean](../mahjong-shanten-calculation/w6/SharedDomainW6.lean)、
+対象: [移行前のSharedDomainW6.lean](https://github.com/bgnori/mahjong-shanten-calculation/blob/bbfed07f8de7d437898dd12abc01fe3b4031f516/w6/SharedDomainW6.lean)、
 [待ち分類の探索・仕様](../mahjong-wait-classification/Mahjong/WaitCompletionFinder.lean)、
 [Shantenの固定文脈仕様](../mahjong-shanten-calculation/Shanten/Capacity/Specification.lean)、
 [Coreの部品・通常形分解](../mahjong-domain-core/MahjongDomain/Parts.lean)。
@@ -46,6 +46,8 @@ Coreの役割は共通の構造・保証を定義することであり、両cons
 
 ## 現在の証明と責務
 
+以下の表は整理前の宣言と判断を示す。実施後の状態は末尾の「実施結果」を参照。
+
 | 現在の宣言 | 内容 | 整理の方向 |
 |---|---|---|
 | `CountsMatch`と`toDomain`・`length_eq`・`draw` | 分類側の牌種リストとShantenのカウントが各牌種で一致し、加牌や総数でも対応する。牌種型の変換ではない。 | 移行中の照合として扱い、既存の`TileCounts.ofList tiles = hand.counts`を直接使えるか検討する。汎用の総数補題は既存Core・Mathlibの定理と照合する。 |
@@ -78,7 +80,7 @@ W6が比較する分類側の入力は**手元牌だけ**で、固定牌の種�
 固定文脈の有効性は、加牌前の全牌種について`C(t) + F(t) ≤ 4`も要求する。
 `remainingCapacity = 4 - F(t)`は自然数減算のため、過剰占有の検証の代わりにはならない。
 
-現状、分類側は`copiesPerTile = 4`を持ち、Shantenは4を直接使い、Coreにも
+整理前は、分類側は`copiesPerTile = 4`を持ち、Shantenは4を直接使い、Coreにも
 物理牌IDやInt37の容量の表現がある。4枚則をCoreの正本として明示し、これらが
 一貫するようにする。牌種ごとのカウントが上限内か、候補牌をもう1枚加えられるかは
 共有ルールを使う基本的な判断の候補である。何を数えるか、手牌枚数や固定面子数の
@@ -119,9 +121,20 @@ W6のA/B例では、分類入力は共通の`111m東`で東待ちとなる。
 公開APIや計算結果を変更する場合は影響範囲とGo契約を別途確認する。
 読みやすさの人手確認は機械検証とは別の持ち越し事項である。
 
-## 現時点の検証
+## 実施結果
 
-本書は既存のコード・テスト・資料と対話を調査した記録であり、新たな定理の証明や
-実装変更は行っていない。直前の抽出作業ではCore、Shanten、待ち分類、W6のLeanビルドが
-通過している。現在のW6では主要な横断定理とA/B例の`assert_no_sorry`があり、
-Shanten CIはCoreと分類側の`main`を取得し、検証した各リビジョンを記録する。
+- Coreに`copiesPerTile`、`TileCounts.Valid`、`TileCounts.CanAdd`と加牌時の
+  有効性の同値を置き、物理牌ID各牌種の枚数とInt37集約の上限を共有定数に結び付けた。
+  赤5・通常5のスロット別上限は維持した。
+- 分類側は入力牌列の合法性と候補牌の上限をCoreから直接使い、通常形和了と
+  Coreの`StandardCompletion`の双方向対応を持つ。Shanten側は手元と固定牌の合算に
+  同じ4枚則を使い、固定文脈待ちと通常形シャンテン0の同値を自側に置いた。
+- 移行途中のW6で横断同値・元のA/B例・`assert_no_sorry`をビルド検証した。
+  各側に`111m東`の東待ち、3固定面子A/Bの可否とBのシャンテン0の回帰を引き継ぎ、
+  一時的な横断定理・`CountsMatch`を含むW6パッケージは削除した。
+  以後、横断同値そのものをCIで継続検査するわけではない。
+- 固定牌型の共有、待ち核を保つ除去との関係、病的構造の一般化は行っていない。
+  読みやすさの人手確認も持ち越す。
+
+Core、Shanten、待ち分類および削除前のW6のLeanビルドと証明穴検査が通過した。
+CIはCoreと分類側の`main`を参照するため、公開時はCoreを先に反映する。

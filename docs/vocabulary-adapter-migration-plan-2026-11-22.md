@@ -27,8 +27,8 @@
 |---|---|---|
 | `mahjong-domain-core` | **完了** | 共有`Shuntsu`／`MentsuCandidate`と`.shuntsu`／`.koutsu`、厳密な`Pair`、`TileCounts`からのPair分解を実装済み。Core build確認済み。 |
 | `mahjong-shanten-calculation` Lean | **完了** | 牌種・カウント・面子候補をCoreから直接利用。型変換AdapterとInt37重複wrapperを削除し、通常完成の対応定理を更新済み。 |
-| `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの部品型と順序付き展開を利用し、local型と`PartsAdapter.lean`を削除。牌種移行までAdapterで列を変換する。回帰検査・CI不在検査あり。読解負荷の人手確認は未実施。 |
-| `mahjong-wait-classification` 牌・物理牌表現 | **一部移行済み** | スートはCoreを直接利用し、重複型とスート変換を削除。`Honor`、`Tile`、`PhysicalTile`等は未移行で、牌種・index・`PhysicalTileId`への移行が残る。 |
+| `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの部品型・牌種と順序付き展開を直接利用し、local型と`PartsAdapter.lean`を削除。回帰検査・CI不在検査あり。読解負荷の人手確認は未実施。 |
+| `mahjong-wait-classification` 牌・物理牌表現 | **実装・機械検証済み、人手確認待ち** | Coreの牌種・index・`PhysicalTileId`を直接利用し、重複型と`DomainAdapter`を削除。列挙・ID・赤5境界と既存分類の回帰検査あり。 |
 | Go実装 | **照合未完了** | 固定済み`Meld`契約は維持する。牌表現、Tenhou/Int37/Int34の順序、容量、赤5規則、および固定槓とstanding countsの境界をCoreと照合する。 |
 | 不在検査・文書・読解負荷 | **未完了** | 完了した概念ごとのlocal宣言・移行用変換の不在検査、用語資料の同期、代表処理の読みやすさ比較を追加・記録する。 |
 
@@ -56,9 +56,7 @@ ShantenのLean移行は完了済みです。Go照合はCoreの表現規則に対
 
 **実施結果:** 3型をCoreから直接利用し、`PartsAdapter.lean`を削除した。当初は部品ごとの
 順序付き展開と対応証明が分類側に残っていたが、Coreの`orderedTiles`を正本にし、
-`tiles`をそこから導出した。分類側は牌種Adapterで列を写し、共通の計数補題を利用する。
-`Pattern.lean`のAdapter定義・証明は`DomainAdapter.lean`へ移した。`Basic.lean`には
-`Tile.format`が使う基本変換が残る。牌種Adapterは段階2まで残す。
+`tiles`をそこから導出した。分類側は共通の計数補題を利用する。当初残っていた牌種Adapterは段階2で削除した。
 候補の列挙順、端の順子、刻子、
 同一面子の重複と分解順、待ち・分類コードの順序と重複数について回帰例を確認した。
 CIに旧部品型・変換宣言と`PartsAdapter.lean`の不在検査を追加した。
@@ -94,7 +92,23 @@ Coreの`Pair.tiles`、移行後は分類側の`ClassificationPair.tiles`とCore�
 `WinningComponent.shuntsu .Pinzu start`を`.pin`へ、`.numbered .Manzu rank`を`.man`へ
 変更した。`Manzu`等は日本語の名称が明示的だが、Coreの`man/pin/sou`はmpszの色表記と
 対応し、既存Core APIを通じて分類とShantenの同じ概念を一貫して読めるため採用した。
-人手による読みやすさ確認は引き続き未実施。字牌・牌種・物理牌の移行は別途残る。
+人手による読みやすさ確認は引き続き未実施。
+
+**牌種・物理牌の実施結果:** Core `Tile`、`Honor`、`TileFormat`、`PhysicalTileId`を直接使用し、
+旧ローカル型と`DomainAdapter.lean`、Shanten連携の牌変換・往復証明を削除した。
+`Hand`の埋め込みは位置ごとに物理IDを保持し、同じIDの重複禁止と位置順を維持する。
+旧Adapterは`index * 4 + copy`の牌種・copy保存を証明していた。移行後は任意のIDを
+その牌種indexと余りで再構成できること、34牌種の列挙順、各色の赤5と通常5の境界を
+検査する。`deck`は有限集合であり、その列挙順を公開契約として扱わない。
+既存の待ち・分類コード・重複・表示例とCI不在検査も維持する。
+
+**名前と読解負荷:** 旧`WinningComponent.pair (.numbered .man 4)`は
+`WinningComponent.pair (.suited .man 4)`、旧`.honor .East`は
+`.honor Honor.east`となる。`numbered`は数牌であることを強調する一方、`suited`は
+字牌と対比して「スートを持つ牌」という共通構造を示すため、Coreのwhatとして採用した。
+字牌は`Fin 7`のまま名前付き定数を提供する。完成証明は牌種変換と往復を追わず、
+Coreの順序付き展開と計数補題を直接使う。これらの比較は人手による読みやすさ確認を
+代替せず、確認は未実施。
 
 **完了条件:** 各移行対象の値・index・物理牌IDの対応根拠があり、重複定義と不要な変換が削除されていること。
 列挙順・物理牌制約など既存挙動の回帰検査と宣言の不在検査を追加し、Lean build・テストが成功すること。

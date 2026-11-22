@@ -3,7 +3,8 @@
 基準日: 2026-11-22
 
 関連: [共有ドメイン語彙への移行状況と対応計画](./vocabulary-adapter-migration-plan-2026-11-22.md)、
-[共有ドメイン語彙とAdapterの現状](./vocabulary-adapter-status.md)
+[共有ドメイン語彙とAdapterの現状](./vocabulary-adapter-status.md)、
+[SharedDomainW6の調査と今後の整理](./shared-domain-w6-investigation-2026-11-22.md)
 
 ## 目的・位置づけ
 

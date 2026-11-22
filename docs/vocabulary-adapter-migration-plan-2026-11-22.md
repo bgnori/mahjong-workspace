@@ -28,7 +28,7 @@
 | `mahjong-domain-core` | **完了** | 共有`Shuntsu`／`MentsuCandidate`と`.shuntsu`／`.koutsu`、厳密な`Pair`、`TileCounts`からのPair分解を実装済み。Core build確認済み。 |
 | `mahjong-shanten-calculation` Lean | **完了** | 牌種・カウント・面子候補をCoreから直接利用。型変換AdapterとInt37重複wrapperを削除し、通常完成の対応定理を更新済み。 |
 | `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの部品型と順序付き展開を利用し、local型と`PartsAdapter.lean`を削除。牌種移行までAdapterで列を変換する。回帰検査・CI不在検査あり。読解負荷の人手確認は未実施。 |
-| `mahjong-wait-classification` 牌・物理牌表現 | **未完了（Adapter経由）** | `Basic.lean`の`Suit`、`Honor`、`Tile`、`PhysicalTile`等と`DomainAdapter.lean`の対応が残る。Coreの牌種・index・`PhysicalTileId`への直接移行を検討し、変換ごとに意味と利用箇所を確認する。 |
+| `mahjong-wait-classification` 牌・物理牌表現 | **一部移行済み** | スートはCoreを直接利用し、重複型とスート変換を削除。`Honor`、`Tile`、`PhysicalTile`等は未移行で、牌種・index・`PhysicalTileId`への移行が残る。 |
 | Go実装 | **照合未完了** | 固定済み`Meld`契約は維持する。牌表現、Tenhou/Int37/Int34の順序、容量、赤5規則、および固定槓とstanding countsの境界をCoreと照合する。 |
 | 不在検査・文書・読解負荷 | **未完了** | 完了した概念ごとのlocal宣言・移行用変換の不在検査、用語資料の同期、代表処理の読みやすさ比較を追加・記録する。 |
 
@@ -88,6 +88,13 @@ Coreの`Pair.tiles`、移行後は分類側の`ClassificationPair.tiles`とCore�
    物理牌の列挙順やHandの不変条件を確認する。
 4. 各表現の利用が切り替わった範囲から不要な変換とlocal定義を削除する。
    `DomainAdapter`全体は未移行の対応が残る間は維持し、一括削除しない。
+
+**スートの実施結果:** `Suit`はCoreを直接使い、旧型と双方向変換・往復証明を削除した。
+分類上のスート順はCoreの`Suit.all`を使い、分類キーは同じ順から得る。代表例では旧
+`WinningComponent.shuntsu .Pinzu start`を`.pin`へ、`.numbered .Manzu rank`を`.man`へ
+変更した。`Manzu`等は日本語の名称が明示的だが、Coreの`man/pin/sou`はmpszの色表記と
+対応し、既存Core APIを通じて分類とShantenの同じ概念を一貫して読めるため採用した。
+人手による読みやすさ確認は引き続き未実施。字牌・牌種・物理牌の移行は別途残る。
 
 **完了条件:** 各移行対象の値・index・物理牌IDの対応根拠があり、重複定義と不要な変換が削除されていること。
 列挙順・物理牌制約など既存挙動の回帰検査と宣言の不在検査を追加し、Lean build・テストが成功すること。

@@ -117,12 +117,12 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 | リポジトリ | ローカル／共有語彙 | Adapterの有無と範囲 |
 |---|---|---|
 | [mahjong-domain-core](../mahjong-domain-core/) | 共有定義の正本。`Tile`、厳密に2枚を表す`Pair`、`Shuntsu`／`MentsuCandidate`（`.shuntsu`／`.koutsu`）、`Kan.occupiedTiles`、`StandardDecomposition`、`StandardCompletion`を定義します。`Pair.counts_eq_pair_add_remaining`で、2枚以上ある牌種からPairを選んだ残余カウントとの再構成を保証します。固定カンは手牌カウントとは別概念です。 | consumer向けAdapterはありません。共通の意味は[Parts.lean](../mahjong-domain-core/MahjongDomain/Parts.lean)と[用語集](../mahjong-domain-core/docs/GLOSSARY.md)に集約されています。`StandardCompletion`の意味・名前の見直しは保留です。 |
-| [mahjong-wait-classification](../mahjong-wait-classification/) | [Basic.lean](../mahjong-wait-classification/Mahjong/Basic.lean)に`Suit`、`Honor`、`Tile`、独自の`PhysicalTile`等が残ります。[Pattern.lean](../mahjong-wait-classification/Mahjong/Pattern.lean)では面子部品のCore型を直接利用し、分類固有の列挙を定義します。順序付き展開はCoreから牌種Adapter経由で利用します。待ち分解・待ち核などは分類固有です。用語集は[こちら](../mahjong-wait-classification/docs/GLOSSARY.md)です。 | **牌種・物理牌にあり（移行用）。** `DomainAdapter.lean`が対応を担います。面子部品の重複型と`PartsAdapter.lean`は削除済みです。 |
+| [mahjong-wait-classification](../mahjong-wait-classification/) | スートと面子部品はCore型を直接利用します。[Basic.lean](../mahjong-wait-classification/Mahjong/Basic.lean)に`Honor`、`Tile`、独自の`PhysicalTile`等が残ります。[Pattern.lean](../mahjong-wait-classification/Mahjong/Pattern.lean)は分類固有の列挙を定義し、順序付き展開は牌種Adapter経由で利用します。待ち分解・待ち核などは分類固有です。用語集は[こちら](../mahjong-wait-classification/docs/GLOSSARY.md)です。 | **牌種・物理牌にあり（移行用）。** `DomainAdapter.lean`が対応を担います。面子部品とスートの重複型・変換は削除済みです。 |
 | [mahjong-shanten-calculation](../mahjong-shanten-calculation/) | Coreの`Suit`、`Tile`、`TileCounts`、`MentsuCandidate`を直接使います。`Hand`はカウントと固定面子数だけを持つ抽象状態です。`Capacity.FixedMeld`は標準形または槓を固定文脈として持ちます。用語集は[こちら](../mahjong-shanten-calculation/docs/GLOSSARY.md)です。 | 型変換Adapterと`Input37`の重複wrapperは削除済み。`Int37Counts`、`Int37Index.tile`、`Int37Index.capacity`、`aggregateInt37`を直接使います。通常完成の対応定理は`Specification.lean`にあります。 |
 
 ## 重複と意味差
 
-- 待ち分類には牌種・スート・牌表現の重複定義が残っています。面子部品はCore型に移行済みです。
+- 待ち分類には牌種・字牌・物理牌表現の重複定義が残っています。スートと面子部品はCore型に移行済みです。
 - 旧`Toitsu`↔`Pair` adapterの往復定理は、両者が「ちょうど2枚」を表すため成立していました。Pairの意味は広げず、同種牌が3枚・4枚あるときは`TileCounts`から2枚を選び、残りを別に保ちます。
 - Coreでは共有`Meld`を`MentsuCandidate`へ改名し、共有`Shuntsu`と`.shuntsu`／`.koutsu`語彙を実装しました。ShantenもこのAPIを直接使います。関係述語など、構造型とは異なる概念は必要に応じて別に定義します。
 - シャンテンの`Hand`は共通の物理牌手ではなくカウント状態です。待ち分類の物理的`Hand`はconsumer固有で共有化しにくく、Coreに移す対象は`Hand`そのものではなく牌・物理ID等の部品です。
@@ -139,7 +139,7 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 | Core `Pair` ↔ 旧待ち分類 `Toitsu` | **同義対応・移行済み。** どちらも同一牌種ちょうど2枚を表します。3枚・4枚の手牌中の同種牌は`TileCounts`に保持し、そこから2枚をPairとして分解します。Shantenの`pairCount`は2枚以上の牌種数であり、Pairの構造体ではありません。固定槓は手牌カウントとは異なる`FixedMeld.kan`です。 | 全値往復で対応を確認後、重複型と往復証明を削除しました。Shantenの`pairCount`は独自の牌種数計算のままです。 |
 | Core `MentsuCandidate` ↔ 旧待ち分類 `MentsuCandidate`・旧Shanten `Meld` | **順子・刻子形は対応し、Core型へ移行済み。** 候補は`.shuntsu`（共有`Shuntsu`）または`.koutsu`（牌種）です。 | 全consumerがCore型を直接利用し、順序付き展開もCoreを正本とします。候補の列挙は分類側に残します。副露・槓を含むGo入力の`Meld`とは統合しません。 |
 | Core/Shanten `Tile.suited` ↔ 待ち分類 `Tile.numbered` | **同じ牌種集合を指すが、注目点が異なる。** どちらもスートとランクで表す27種類の数牌で、adapterは直接対応させています。`.numbered`は数牌としての構造、`.suited`はスートを持つ牌としての構造を前面に出します。 | Coreの統一名はCoreの表現責務とwait-classificationでの命名意図を合わせて決めます。単にconsumer間で使われている数だけを根拠に`.suited`へ寄せず、どちらがCoreのwhatを最も明確に示すかを検討します。 |
-| Core `Suit.man/pin/sou` ↔ 待ち分類 `Suit.Manzu/Pinzu/Souzu` | **同じスート要素。** 3つのスートが要素ごとに双方向対応し、adapterの往復定理があります。違いは略記と日本語ローマ字表記です。 | 公開名は改名可能です。`Manzu/Pinzu/Souzu`を含む候補を代表コードで比較し、Core内の順序・表記仕様と整合させて決定します。 |
+| Core `Suit.man/pin/sou` ↔ 旧待ち分類 `Suit.Manzu/Pinzu/Souzu` | **同じスート要素で移行済み。** 各要素の対応と列挙順を確認し、旧型・変換・往復定理を削除しました。 | 代表コードの命名比較と採用理由は[対応計画](./vocabulary-adapter-migration-plan-2026-11-22.md)に記録。人手確認は未実施です。 |
 | Core `Int37Index.tile` ↔ 旧Shanten `Input37.normalizeTile`、および Core `Tile.int37Index` ↔ 旧Shanten `Input37.normalIndex` | **同じ写像（移行済み）。** 前者は37スロットから牌種へ、後者は牌種からInt37スロットへ写します。Shanten側wrapperは削除され、Core写像を直接使います。 | Go実装もCoreのスロット順・容量・赤5規約に追随します。 |
 | Core `aggregateInt37` ↔ 旧Shanten `Input37.normalizeCounts` | **同じ集約（移行済み）。** 同じ37枠の符号付きカウントを、赤5を通常5へまとめた牌種カウントへ集約します。Shanten側wrapperは削除され、Core関数と定理を直接使います。 | Coreを語彙・演算の正本とし、consumerだけに同じ集約定義を残しません。 |
 | Core `Int37Counts` ↔ 旧Shanten Lean `Input37.Counts37` | **完全一致（移行済み）。** Shanten LeanはCoreの`Int37Counts`を直接使い、重複aliasを削除しました。Goの`Counts37`は固定長配列`[37]int`という別言語の表現ですが、意味上のスロット順・容量・赤5規約はCore定義に追随させます。 | Goではidiomaticな配列表現を維持しても構いませんが、別仕様として独立進化させずCoreの意味に追随します。 |

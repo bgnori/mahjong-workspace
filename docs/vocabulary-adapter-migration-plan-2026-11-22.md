@@ -27,7 +27,7 @@
 |---|---|---|
 | `mahjong-domain-core` | **完了** | 共有`Shuntsu`／`MentsuCandidate`と`.shuntsu`／`.koutsu`、厳密な`Pair`、`TileCounts`からのPair分解を実装済み。Core build確認済み。 |
 | `mahjong-shanten-calculation` Lean | **完了** | 牌種・カウント・面子候補をCoreから直接利用。型変換AdapterとInt37重複wrapperを削除し、通常完成の対応定理を更新済み。 |
-| `mahjong-wait-classification` 面子部品 | **未完了（Adapter経由）** | `Toitsu`、`Shuntsu`、`MentsuCandidate`がlocal型として残り、`PartsAdapter.lean`が対応・往復証明を持つ。Core型の直接利用、local型と不要な変換・証明の削除、順序・結果の回帰確認が必要。 |
+| `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの`Pair`、`Shuntsu`、`MentsuCandidate`を直接利用し、local型と`PartsAdapter.lean`を削除。順序付き展開の対応証明・回帰検査・CI不在検査を追加。読解負荷の人手確認は未実施。 |
 | `mahjong-wait-classification` 牌・物理牌表現 | **未完了（Adapter経由）** | `Basic.lean`の`Suit`、`Honor`、`Tile`、`PhysicalTile`等と`DomainAdapter.lean`の対応が残る。Coreの牌種・index・`PhysicalTileId`への直接移行を検討し、変換ごとに意味と利用箇所を確認する。 |
 | Go実装 | **照合未完了** | 固定済み`Meld`契約は維持する。牌表現、Tenhou/Int37/Int34の順序、容量、赤5規則、および固定槓とstanding countsの境界をCoreと照合する。 |
 | 不在検査・文書・読解負荷 | **未完了** | 完了した概念ごとのlocal宣言・移行用変換の不在検査、用語資料の同期、代表処理の読みやすさ比較を追加・記録する。 |
@@ -38,7 +38,7 @@
 ShantenのLean移行は完了済みです。Go照合はCoreの表現規則に対する確認なので、wait-classification
 の移行と並行して実施できます。各段階は意味・振る舞いの確認を通過してから完了扱いにします。
 
-### 1. wait-classificationの面子部品をCore型へ移す
+### 1. wait-classificationの面子部品をCore型へ移す（人手確認待ち）
 
 **対象:** `Toitsu`、`Shuntsu`、`MentsuCandidate`、`PartsAdapter.lean`と直接の利用箇所。
 
@@ -53,6 +53,25 @@ ShantenのLean移行は完了済みです。Go照合はCoreの表現規則に対
 あること。残す例外は対象・理由・解消条件を記録すること。`lake build Mahjong MahjongTests`が成功し、
 対象宣言の不在検査が追加されていること。代表処理で追う型・変換・証明の数と変換段数を移行前後で
 比較し、式や証明が複雑化していないかも確認すること。
+
+**実施結果:** 3型をCoreから直接利用し、`PartsAdapter.lean`を削除した。分類側の
+順序付き展開から牌種Adapterを通してCore `Multiset`へ写す等式を、Pair、順子、面子候補に
+ついて証明した。牌種Adapterは段階2まで残す。候補の列挙順、端の順子、刻子、
+同一面子の重複と分解順、待ち・分類コードの順序と重複数について回帰例を確認した。
+CIに旧部品型・変換宣言と`PartsAdapter.lean`の不在検査を追加した。
+分類側の`lake build Mahjong MahjongTests`、`go test ./mahjong`、Shantenとの固定文脈連携
+`w6`の`lake build`が隔離環境で成功した。展開対応と通常完成への接続は`sorry`不在も検査する。
+
+**読解負荷の比較:** 対象を`WinningPartitionSpec.toDomainStandardCompletion`から
+Pairと面子候補の共有カウントに至る経路に固定する。型はlocalとCoreのPair・面子候補の
+計4定義からCoreの2定義となった。部品変換は`toDomainDecomposition`、
+`toDomainPair`、`toDomainMentsuCandidates`、`toDomainMentsuCandidate`の4宣言から0となり、
+面子候補への最長変換経路は3段から0段となった。牌種の変換は両時点で残る。
+同経路の部品カウント／展開の対応定理は5から6になった（順子単体の展開対応を明示したため）。
+対子の牌展開を探す場合の候補宣言は2から2のままである（移行前はlocalの`Toitsu.tiles`と
+Coreの`Pair.tiles`、移行後は分類側の`ClassificationPair.tiles`とCoreの`Pair.tiles`）。
+移行後の2つは順序付き列と多重集合という異なる出力を持つ。
+これらは代理指標であり、複雑さや読みやすさの人手確認は未実施のため、本段階を最終完了にはしない。
 
 ### 2. wait-classificationの牌・物理牌表現をCoreへ移す
 

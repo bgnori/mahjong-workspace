@@ -3,6 +3,7 @@
 基準日: 2026-11-22
 
 方針・詳細な意味対応: [共有ドメイン語彙とAdapterの現状](./vocabulary-adapter-status.md)
+追加調査: [ShantenからCoreへの共有機能抽出計画](./shanten-core-extraction-plan-2026-11-22.md)
 
 ## 目的と適用方針
 
@@ -26,7 +27,7 @@
 | 対象 | 状況 | 残っていること |
 |---|---|---|
 | `mahjong-domain-core` | **完了** | 共有`Shuntsu`／`MentsuCandidate`と`.shuntsu`／`.koutsu`、厳密な`Pair`、`TileCounts`からのPair分解を実装済み。Core build確認済み。 |
-| `mahjong-shanten-calculation` Lean | **完了** | 牌種・カウント・面子候補をCoreから直接利用。型変換AdapterとInt37重複wrapperを削除し、通常完成の対応定理を更新済み。 |
+| `mahjong-shanten-calculation` Lean | **既存Core型への移行は完了** | 牌種・カウント・面子候補をCoreから直接利用。追加の共通機能抽出は[別計画](./shanten-core-extraction-plan-2026-11-22.md)で調査する。 |
 | `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの部品型・牌種と順序付き展開を直接利用し、local型と`PartsAdapter.lean`を削除。回帰検査・CI不在検査あり。読解負荷の人手確認は未実施。 |
 | `mahjong-wait-classification` 牌・物理牌表現 | **実装・機械検証済み、人手確認待ち** | Coreの牌種・index・`PhysicalTileId`を直接利用し、重複型と`DomainAdapter`を削除。列挙・ID・赤5境界と既存分類の回帰検査あり。 |
 | Go実装 | **照合未完了** | 固定済み`Meld`契約は維持する。牌表現、Tenhou/Int37/Int34の順序、容量、赤5規則、および固定槓とstanding countsの境界をCoreと照合する。 |
@@ -35,7 +36,8 @@
 ## 実施計画
 
 順序は **Core（完了）→ wait-classification → adapter整理・完了検査** とします。
-ShantenのLean移行は完了済みです。Go照合はCoreの表現規則に対する確認なので、wait-classification
+Shantenの既存Core型へのLean移行は完了済みです。追加の共有機能抽出は別計画で進めます。
+Go照合はCoreの表現規則に対する確認なので、wait-classification
 の移行と並行して実施できます。各段階は意味・振る舞いの確認を通過してから完了扱いにします。
 
 ### 1. wait-classificationの面子部品をCore型へ移す（人手確認待ち）
@@ -145,6 +147,7 @@ consumer固有の理由があり、対応する不在検査・回帰検査が通
 
 - `Completion`をconsumer横断で統合・改名すること。意味、入力条件、証拠形式が異なるため別課題とします。
 - wait-classification固有の待ち分解、`WaitCore`、物理的`Hand`、候補の順序付き列挙のCore移管。
-- Shanten固有の`Hand`、`Taatsu`、容量・探索方針の共有化。
+- Shanten固有の`Hand`、現在の`Taatsu`、容量・探索方針のそのままの共有化。
+  `Taatsu`や固定牌のうち共有可能な概念があるかは[別計画](./shanten-core-extraction-plan-2026-11-22.md)で再検討する。
 - Goの固定済み入力契約`Meld`をLeanの標準形候補へ統合すること。
 - 未決定のAPI名を、代表コードの評価・意味確認なしに一括改名すること。

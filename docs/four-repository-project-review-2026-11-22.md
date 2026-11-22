@@ -17,7 +17,7 @@
 
 **総評:** Coreが共通の「what」を持ち、Shantenと待ち分類がそれぞれの「how」を持つ分割は明確です。Leanの共有型を各consumerが直接使い、容量規則や固定槓などの境界も区別されています。CIにもCoreとconsumer間の互換性検査があります。設計を妨げる重大な構造問題は見つかりませんでした。
 
-対応を勧める所見は、待ち分類リポジトリ自身のGoテスト不足と、workspace資料から独立リポジトリへのリンク切れです。workspace設定の説明にも軽微な不一致があります。
+対応を勧める所見は、待ち分類リポジトリ自身のGoテスト不足と、workspace資料から独立リポジトリへのリンク切れです。workspace方式についてはレビュー後にガイドを親フォルダー方式へ統一しました。
 
 ## 所見
 
@@ -37,11 +37,11 @@
 
 **推奨:** 別リポジトリへのリンクはGitHub URLに置き換えます。現行資料は`main`へのリンク、特定時点の調査記録はレビュー済みコミットへのリンクを使い分けると、参照先と履歴性が明確になります。
 
-### P3 — 「multi-root」説明とworkspace設定が一致しない
+### P3 — 親フォルダー方式を維持し、ガイドの説明を統一（対応済み）
 
-[共有workspaceガイド](https://github.com/bgnori/mahjong-domain-core/blob/53b361b8eae2850ef15972393887d51c518c1b0d/docs/SHARED_WORKSPACE.md)は3つのLeanリポジトリを開くmulti-root workspaceとして説明していますが、[`mahjong.code-workspace`](../mahjong.code-workspace)の`folders`には`"."`（workspaceリポジトリ）だけが登録されています。兄弟リポジトリは親フォルダー内に見えるため、これ自体がビルドを妨げるとは限りませんが、説明どおりのmulti-root構成ではありません。
+[レビュー時点の共有workspaceガイド](https://github.com/bgnori/mahjong-domain-core/blob/53b361b8eae2850ef15972393887d51c518c1b0d/docs/SHARED_WORKSPACE.md)はmulti-rootと説明していましたが、[`mahjong.code-workspace`](../mahjong.code-workspace)は`"."`を1つのfolderとして開く親フォルダー方式です。3つのプロジェクトを兄弟ディレクトリに置く現在の構成は、相対path依存を保ち、各Gitリポジトリの独立性も損なわないため、multi-root化は不要と判断しました。Coreのガイドを実際の設定に合わせ、親フォルダーを1つのworkspace folderとして開く構成だと明記しました。
 
-**推奨:** 4リポジトリを個別のworkspace folderとして登録するか、現状の親フォルダー方式に合わせてmulti-rootという説明を改めます。
+**推奨:** 親フォルダー方式を維持します。個別workspace rootが必要な設定やタスクが生じた場合にのみ、multi-root化を再検討します。
 
 ## 横断評価と残るトレードオフ
 

@@ -1,7 +1,7 @@
 # Mahjong workspace
 
-This repository contains workspace and Dev Container configuration only. The
-Lean source projects remain independent repositories:
+This repository contains workspace configuration and shared documentation.
+The Lean source projects remain independent repositories:
 
 - `mahjong-domain-core`
 - `mahjong-shanten-calculation`
@@ -16,3 +16,6 @@ shares Mathlib's downloaded cache through the host's `~/.cache/mathlib`.
 Mathlib cache data is reused on the same host; a new host downloads it once.
 Individual projects also provide Dev Container configurations for standalone
 development.
+
+The shared [Lean module policy](docs/lean-module-policy.md) describes the
+module system, incremental migration, and import analysis across the projects.

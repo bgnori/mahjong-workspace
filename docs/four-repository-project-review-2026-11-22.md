@@ -54,13 +54,15 @@
 
 この節のコード確認対象は、`mahjong-domain-core` `e9dcbbcd51d649b1ad6a5dbd402bf6835992e720`、`mahjong-shanten-calculation` `be918559edc584102d381e9d5a3f6f81324233f8`、`mahjong-wait-classification` `072d116cae1b1cf99a7172aef0e81eebcb4490d3`です。これは上表の構成レビュー対象とは別の、命名・語彙に限った追補です。
 
-### P3 — `WaitCore`が`WaitDecomposition`の別名で、区別が型に表れない
+### P3 — 待ち核の多義性が、同じ待ち牌に対する複数候補として見えにくい
 
-[WaitDecompositionCode.lean](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitDecompositionCode.lean#L59)では一般の`WaitDecomposition`を定義し、同じファイルで[`WaitCore`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitDecompositionCode.lean#L108)を`WaitDecomposition`の別名としています。コメント上、待ち核は「完成面子を除去済み」の待ち分解ですが、その条件は`waitCores`の生成経路にしかなく、型としては未加工の`WaitDecomposition`と相互に代入可能です。また`WaitCoreExtraction.core`は待ち牌を含まない成分列なので、`core`だけでは値の範囲も分かりにくくなっています。
+[WaitDecompositionCode.lean](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitDecompositionCode.lean#L59)の`WaitCore`は、1つの待ち牌と完成面子を除いた成分列の組です。重要なのは`WaitCore`が別名か独立した型かではなく、同じ待ち牌に複数の解釈があるとき、異なる成分列を持つ複数の`WaitCore`として表すことです。`waitCores`の返す`List WaitCore`がその候補集合を表します。
 
-**影響:** API利用者は名前から別の型・不変条件があると期待しますが、型検査ではその違いを保証できません。
+たとえば`1223m`は`2m`待ちを、`2m`を雀頭にする単騎と、`13m`の嵌張＋`22m`の雀頭という2つの核で表します。これは同じ待ち牌が複数回現れても重複ではなく、待ちの多義性を表す重要な概念です。既存の`1234m`の例は異なる待ち牌の例なので、この同一待ち牌に対する複数解釈とは区別して説明する必要があります。
 
-**推奨:** 不変条件を保証したいなら、`WaitCore`を独立した構造体にし、検証証拠または制限した構築経路を持たせます。単なる説明上の別名でよいなら`WaitCore`をなくし、関数名・文書で「完成面子を除去した`WaitDecomposition`」と明示します。どちらの場合も`WaitCoreExtraction.core`は`coreComponents`のように、牌成分の列であることを名前に含めると読みやすくなります。
+**影響:** 型別名そのものは誤りではありませんが、待ち核を単一の候補として読むのか、複数候補をまとめた集合として読むのかが、名前と概略説明だけでは伝わりにくくなっています。
+
+**推奨:** 麻雀上の意味を説明し、同じ待ち牌に異なる核が得られる`1223m`のようなケースを、`findWaitCores`の結果を確かめる実行可能なLean `example`で示します。`WaitCore`を独立型にするか、待ち牌ごとに候補をまとめる型を導入するかは、その意味を説明した後にAPI上の利点で判断すべきです。型の変更だけを先行させる必要はありません。
 
 ### P3 — `Hand`がリポジトリごとに異なる表現を指す
 

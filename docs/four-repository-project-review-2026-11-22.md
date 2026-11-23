@@ -72,11 +72,13 @@ Shantenの[`Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be
 
 **推奨:** 独立した各プロジェクト内で`Hand`を維持する場合も、共有APIや横断資料では`ShantenHand`／`PhysicalTileHand`など表現を示す名前を使います。両型を同じLean文脈へ導入する場合は、修飾名を明示します。
 
-### P3 — `Standard`／`Special`と`Special.lean`の役割が名前だけでは限定されない
+### P3 — `Standard`／`Special`語彙を識別子に使わない（方針反映）
 
-Coreの[`StandardCompletion`](https://github.com/bgnori/mahjong-domain-core/blob/e9dcbbcd51d649b1ad6a5dbd402bf6835992e720/MahjongDomain/Parts.lean#L148)は牌種カウント上の通常形完成仕様で、待ち分類の[`IsStandardAgari`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitCompletionFinder.lean#L380)は牌種列に対する通常形和了判定です。`Standard`は麻雀の通常形を指しますが、その限定は識別子単体には現れません。またShantenの[`Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Special.lean#L4)は七対子・国士無双の式と正しさを扱い、[`Capacity/Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Special.lean#L4)は固定面子がない場合にそれらの計算を呼び出すAPIを扱います。同じ`Special.lean`でも役割が異なります。
+**方針:** `Standard`／`Special`という語彙は使いません。`Standard`が指していた面子手は`MentsuHand`と表記します。`Special`で七対子・国士無双を指していた箇所は、曖昧な総称を避けて対象の形を明記します。
 
-**推奨:** 用語を広げるなら`StandardFormCompletion`／`IsStandardFormAgari`、ファイル名は`SpecialShapeFormulas.lean`／`SpecialShapeSearch.lean`のように対象と役割を含めます。Core用語集が定義する`Standard`を維持する場合は、両側の識別子から同じ「通常形」を指すと分かるようにし、初出で用語集へ誘導します。
+**改名対象:** Coreの[`StandardDecomposition`／`StandardCompletion`](https://github.com/bgnori/mahjong-domain-core/blob/e9dcbbcd51d649b1ad6a5dbd402bf6835992e720/MahjongDomain/Parts.lean)、待ち分類の[`IsStandardAgari`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitCompletionFinder.lean#L380)、およびこれらを参照する仕様・定理名は、いずれも面子手を表す語彙へ揃える対象です。Shantenの[`Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Special.lean)と[`Capacity/Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Special.lean)は七対子・国士無双だけを扱うため、対象の形を明記する改名対象です。
+
+**別途対応する用例:** Shantenの[`specialKanStanding`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Examples.lean)は、固定槓を1つ持つ手の例名です。定義上、七対子・国士無双の計算結果がどちらも`none`になるケースであり、七対子・国士無双を指す`Special`用例ではありません。この名前は個別の改名候補として切り分けます。
 
 ### P3 — `threeMeldStanding`は名詞の結び付きが分かりにくい（対応済み）
 

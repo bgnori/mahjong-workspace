@@ -74,7 +74,9 @@ Shantenの[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation
 
 **方針:** このライブラリは牌姿を扱うツールであり、牌譜を扱うツールではありません。広く使われている形式であっても、Tenhouの牌コードに依存する処理をライブラリ内部へ広げず、Tenhouコードは入出力境界でのみ扱います。境界でTenhou IDをInt37またはInt34のカウントへ変換し、内部の牌姿表現・計算・APIは基本的にInt37／Int34で処理します。赤5を区別する必要がある処理はInt37、区別しない処理はInt34を用います。
 
-**推奨:** ローカル変数名`hand`は変更せず、共有APIや横断資料では`Shanten.Hand`／待ち分類側の`Hand`のように修飾名を示します。型名を公開境界で単独使用する場合は、`ShantenHand`／`PhysicalTileHand`など、どのモデルか分かる名称を検討します。Tenhouコードを受け取る境界の型・変換は`TenhouId`などTenhou固有の名前で表し、Coreやconsumerの内部表現へ漏らさないようにします。
+**変換の集約と配置:** Tenhou IDからInt37／Int34への変換はconsumerごとに重複実装せず、一箇所に集約します。この共通化が変換をCoreへ置く動機になった可能性はありますが、共有されることとドメインCoreに属することは別の判断です。牌種・Int37／Int34などのドメイン表現はCoreが定義し、Tenhou IDとその変換は`Core.Util`または専用codecのようなプロトコル境界のユーティリティに分ける構成が候補です。重要なのは、変換規則を一箇所に保ちつつ、Tenhou固有の型や規則をドメインCoreおよびconsumerの内部処理へ漏らさないことです。
+
+**推奨:** ローカル変数名`hand`は変更せず、共有APIや横断資料では`Shanten.Hand`／待ち分類側の`Hand`のように修飾名を示します。型名を公開境界で単独使用する場合は、`ShantenHand`／`PhysicalTileHand`など、どのモデルか分かる名称を検討します。Tenhouコードを受け取る境界の型・変換は`TenhouId`などTenhou固有の名前で表し、変換実装を共有ユーティリティに一元化して、ドメインCoreやconsumerの内部表現へTenhou固有の型を漏らさないようにします。
 
 ### P3 — `Standard`／`Special`語彙を識別子に使わない（方針反映）
 

@@ -78,11 +78,11 @@ Coreの[`StandardCompletion`](https://github.com/bgnori/mahjong-domain-core/blob
 
 **推奨:** 用語を広げるなら`StandardFormCompletion`／`IsStandardFormAgari`、ファイル名は`SpecialShapeFormulas.lean`／`SpecialShapeSearch.lean`のように対象と役割を含めます。Core用語集が定義する`Standard`を維持する場合は、両側の識別子から同じ「通常形」を指すと分かるようにし、初出で用語集へ誘導します。
 
-### P3 — `threeMeldStanding`は名詞の結び付きが分かりにくい
+### P3 — `threeMeldStanding`は名詞の結び付きが分かりにくい（対応済み）
 
-[Capacity/Examples.lean](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Examples.lean#L132)の`threeMeldStanding`は、`Hand`の`fixedMelds`が3の例です。`threeMeld`が固定面子数なのか手牌内の面子数なのか、また`standing`とどう結び付くのかが名前だけでは分かりません。
+[Capacity/Examples.lean](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Examples.lean#L132)にあった`threeMeldStanding`は、`Hand`の`fixedMelds`が3の例でした。`threeMeld`が固定面子数なのか手牌内の面子数なのか、また`standing`とどう結び付くのかが名前だけでは分かりませんでした。
 
-**推奨:** この値が固定面子3つを持つ手であることを明示する`handWithThreeFixedMelds`が適切です。総面子数を表す意図なら、その数え方を別途名前かコメントで明示します。
+**対応:** 固定面子を3つ持つ手であることが分かる`handWithThreeFixedMelds`へ改名しました。
 
 ### P3 — `MahjongComputations.Common`が異なる責務を一つにまとめている
 

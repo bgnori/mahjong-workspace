@@ -70,11 +70,11 @@
 
 Shantenの[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Core.lean#L18)は牌種ごとのカウントと固定面子数を持つ計算用状態です。一方、待ち分類の[`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/Hand.lean#L18)は面子数と物理牌IDの埋め込みを持ち、そこから牌種列を得る牌姿です。これは関数内の変数名`hand`の問題ではありません。各プロジェクト内でその変数を`hand`と呼ぶのは自然です。問題は、横断資料や連携コードで公開型名の`Hand`だけを見ると、どのモデルを指すのか分かりにくいことです。
 
-**物理牌IDについて:** このレビュー対象の待ち分類側`Hand`は独自のID型を定義しておらず、Coreの`MahjongDomain.PhysicalTileId`を使っています。Coreの定義は`Fin (34 * copiesPerTile)`で、コメントにも「Tenhouの安定した0始まりの順序」とあります。したがって、ここでいう物理牌IDは現状、Tenhouの136物理牌ID（0〜135）と理解して正しいです。
+**Tenhou IDについて:** このレビュー対象の待ち分類側`Hand`は、Coreの`MahjongDomain.PhysicalTileId`を使っています。その定義は`Fin (34 * copiesPerTile)`で、値はTenhouの安定した0始まりの136牌コードです。物理牌を識別するコードという分類は正しい一方、この具体的なTenhouコードを`PhysicalTileId`という汎用名の型にするのは適切ではありません。Tenhou固有の値であることが分かる`TenhouId`などの名前にすべきです。
 
-**配置上の論点:** 物理牌の個体を識別する共通概念として各consumerが使うなら、ID型をCoreに置くこと自体は不自然ではなく、この対象コードでもすでにCoreが所有しています。一方、その番号がTenhouとの入出力に限られるなら、外部プロトコルの番号付けをCoreのドメイン表現として固定してよいかは別途判断が必要です。Tenhou番号を境界で変換する設計にするなら、プロトコル固有IDとCoreの物理牌表現を区別する必要があります。
+**方針:** このライブラリは牌姿を扱うツールであり、牌譜を扱うツールではありません。広く使われている形式であっても、Tenhouの牌コードに依存する処理をライブラリ内部へ広げず、Tenhouコードは入出力境界でのみ扱います。境界でTenhou IDをInt37またはInt34のカウントへ変換し、内部の牌姿表現・計算・APIは基本的にInt37／Int34で処理します。赤5を区別する必要がある処理はInt37、区別しない処理はInt34を用います。
 
-**推奨:** ローカル変数名は変更せず、共有APIや横断資料では`Shanten.Hand`／待ち分類側の`Hand`のように修飾名を示します。型名を公開境界で単独使用する場合は、`ShantenHand`／`PhysicalTileHand`など、どのモデルか分かる名称を検討します。あわせて、Tenhouの番号付けをCoreの共通表現として採用するのか、入出力アダプターの責務にするのかを明示します。
+**推奨:** ローカル変数名`hand`は変更せず、共有APIや横断資料では`Shanten.Hand`／待ち分類側の`Hand`のように修飾名を示します。型名を公開境界で単独使用する場合は、`ShantenHand`／`PhysicalTileHand`など、どのモデルか分かる名称を検討します。Tenhouコードを受け取る境界の型・変換は`TenhouId`などTenhou固有の名前で表し、Coreやconsumerの内部表現へ漏らさないようにします。
 
 ### P3 — `Standard`／`Special`語彙を識別子に使わない（方針反映）
 

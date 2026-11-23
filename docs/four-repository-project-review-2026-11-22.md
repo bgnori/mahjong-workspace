@@ -74,18 +74,16 @@ Shantenの[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation
 
 したがって、両者は牌の物理表現が違うのではなく、**同じ牌種カウントを異なる文脈・不変条件で使う型**です。Shantenは固定面子数を使う計算状態を表し、待ち分類は指定した面子手テンパイ形の牌姿を表します。共通化を考える対象は`TileCounts`に基づく手元牌の部分であり、固定面子数、面子手サイズ、総枚数、カウントの妥当性を一つのconsumer非依存な`Hand`へまとめることではありません。
 
-**Core.Handの設計案:** 共通の牌種カウントを持つ手元牌部分を明示するため、Coreに次のような基底型を置く案が最も整合的です。
+**実施結果（2026-11-23）:** Coreに[`MahjongDomain.Hand`](https://github.com/bgnori/mahjong-domain-core/blob/0e06261149aadebd1d4d1ecd88896b1305900c11/MahjongDomain/Hand.lean)を追加しました。これは牌種カウントを持つ手元牌の基底型で、固定面子やconsumer固有の形状を含まず、カウント妥当性も強制しません。4枚上限は既存の`TileCounts.Valid`で引き続き表します。
 
 ```lean
 structure MahjongDomain.Hand where
   counts : MahjongDomain.TileCounts
 ```
 
-この`Hand`は、物理牌IDや固定面子の内訳を含まない、牌種カウントによる手元牌表現です。`TileCounts.Valid`は既存のCore規則として利用し、基底型の構築時に必須とはしません。これにより、Shantenの既存計算状態が許容する未検証カウントを表現でき、待ち分類側では必要な妥当性と総枚数の証拠を引き続き強制できます。Core `Hand`自体に固定面子数や`3n+1`の枚数制約を入れると、一方のconsumerの意味を他方へ誤って押し付けるため避けます。
+[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/781ed367534dd4067e65fd29c155ca1323105f82/Shanten/Core.lean#L18)と[待ち分類の`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/8695a96ee5a992ed3e1280d8370deae3b816cf17/Mahjong/Hand.lean#L15)はCore基底型を直接extendします。Shantenの`fixedMelds`、待ち分類の`mentsuCount`・4枚上限証拠・総枚数証拠は各consumer側に残し、共有カウント用の重複フィールドや変換adapterは導入していません。Tenhou IDは従来どおり入力境界に限定されます。
 
-consumer側は独自の意味と保証を保ったまま、この基底型を埋め込む形にします。Shanten側には`fixedMelds`を持つ計算状態、待ち分類側には`mentsuCount`、`counts.Valid`および総枚数の証拠を持つテンパイ牌姿が残ります。公開境界では`Shanten.Hand`と待ち分類の牌姿型のように修飾名を使い、単独の`Hand`を横断APIで曖昧に使わないようにします。Coreの型を導入してもconsumer型を即座に同一型へ置き換えたり、別名だけの互換層を増やしたりしません。
-
-**採用条件と実施順:** この案は設計判断であり、Core `Hand`の実装はまだ行っていません。実装時は、(1)両consumerの公開型がCore基底型を直接埋め込み、重複した`counts`フィールドや変換adapterを持たないこと、(2)固定面子数・面子数・妥当性・総枚数の既存保証を弱めないこと、(3)Tenhou境界、探索・分類の結果および既存の無効入力の扱いを変えないこと、(4)Coreと両consumerのLeanビルド・回帰検査を通し、代表的な利用コードが複雑化しないことを確認します。Leanの型階層を介しても単なるwrapperや変換段数が増えるだけなら、Coreの既存`TileCounts`を共通基盤として維持し、新しい`Core.Hand`は導入しません。
+consumer固有の不変条件は維持したまま直接extendできることを確認し、`MahjongDomain.Hand`だけで妥当な完全手牌やテンパイ形を表すとはしません。検証はCoreの`cd mahjong-domain-core && lake build MahjongDomain`、Shantenの`cd mahjong-shanten-calculation && lake build`、待ち分類の`cd mahjong-wait-classification && lake build Mahjong MahjongTests`で成功しました。構造体拡張に伴いShanten内の二つの構造体分解と一つの生成器証明を更新しましたが、探索・分類・Tenhou境界の仕様は変更していません。
 
 ### P3 — `Standard`／`Special`語彙を識別子に使わない（実施済み）
 

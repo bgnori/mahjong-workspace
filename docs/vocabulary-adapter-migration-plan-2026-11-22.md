@@ -26,10 +26,10 @@
 
 | 対象 | 状況 | 残っていること |
 |---|---|---|
-| `mahjong-domain-core` | **完了** | 共有`Shuntsu`／`MentsuCandidate`と`.shuntsu`／`.koutsu`、厳密な`Pair`、`TileCounts`からのPair分解を実装済み。Core build確認済み。 |
-| `mahjong-shanten-calculation` Lean | **既存Core型への移行は完了** | 牌種・カウント・面子候補をCoreから直接利用。追加の共通機能抽出は[別計画](./shanten-core-extraction-plan-2026-11-22.md)で調査する。 |
+| `mahjong-domain-core` | **完了** | 共有`Shuntsu`／`MentsuCandidate`と`.shuntsu`／`.koutsu`、厳密な`Pair`、`TileCounts`からのPair分解、およびカウント型基底`MahjongDomain.Hand`を実装済み。Core build確認済み。 |
+| `mahjong-shanten-calculation` Lean | **既存Core型への移行は完了** | 牌種・カウント・面子候補をCoreから直接利用し、Shanten固有の`Hand`は`MahjongDomain.Hand`を基底として固定面子数を加える。追加の共通機能抽出は[別計画](./shanten-core-extraction-plan-2026-11-22.md)で調査する。 |
 | `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの部品型・牌種と順序付き展開を直接利用し、local型と`PartsAdapter.lean`を削除。回帰検査・CI不在検査あり。読解負荷の人手確認は未実施。 |
-| `mahjong-wait-classification` 牌・手牌表現 | **Lean実装・機械検証済み** | `Hand`はInt34相当の`TileCounts`を保持。Tenhou IDはCoreの任意アダプターで範囲・重複を検査して境界で変換する。Go/PythonへのPortは後続。 |
+| `mahjong-wait-classification` 牌・手牌表現 | **Lean実装・機械検証済み** | `Hand`は`MahjongDomain.Hand`を基底とし、面子数・4枚上限・総枚数の証拠を保持。Tenhou IDはCoreの任意アダプターで範囲・重複を検査して境界で変換する。Go/PythonへのPortは後続。 |
 | Go実装 | **後続Port** | Lean仕様の確定後にPortする。固定済み`Meld`契約は維持し、Tenhou IDは入力境界に限定する。 |
 | 不在検査・文書・読解負荷 | **未完了** | 完了した概念ごとのlocal宣言・移行用変換の不在検査、用語資料の同期、代表処理の読みやすさ比較を追加・記録する。 |
 
@@ -143,8 +143,7 @@ consumer固有の理由があり、対応する不在検査・回帰検査が通
 ## 対象外・保留
 
 - `Completion`をconsumer横断で統合・改名すること。意味、入力条件、証拠形式が異なるため別課題とします。
-- wait-classification固有の待ち分解、`WaitCore`、テンパイ形を表す`Hand`の制約、候補の順序付き列挙のCore移管。
-  `TileCounts`を持つ共通基底`MahjongDomain.Hand`の案は[公開型名`Hand`の再検討](./four-repository-project-review-2026-11-22.md#p3--公開型名handだけではリポジトリ間の表現の違いが分からない)を参照。
+- wait-classification固有の待ち分解、`WaitCore`、テンパイ形を表す`Hand`の制約、候補の順序付き列挙のCore移管。共通カウント基底`MahjongDomain.Hand`は実装済みであり、その検討経緯と結果は[公開型名`Hand`の再検討](./four-repository-project-review-2026-11-22.md#p3--公開型名handだけではリポジトリ間の表現の違いが分からない)を参照。
 - Shanten固有の`Hand`の固定面子数・計算状態、現在の`Taatsu`、容量・探索方針のそのままの共有化。
   `Taatsu`や固定牌のうち共有可能な概念があるかは[別計画](./shanten-core-extraction-plan-2026-11-22.md)で再検討する。
 - Goの固定済み入力契約`Meld`をLeanの標準形候補へ統合すること。

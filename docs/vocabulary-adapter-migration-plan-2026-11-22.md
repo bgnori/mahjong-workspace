@@ -64,7 +64,7 @@ CIに旧部品型・変換宣言と`PartsAdapter.lean`の不在検査を追加�
 分類側の`lake build Mahjong MahjongTests`、`go test ./mahjong`、Shantenとの固定文脈連携
 `w6`の`lake build`が隔離環境で成功した。展開対応と通常完成への接続は`sorry`不在も検査する。
 
-**読解負荷の比較（最初の部品型移行時点）:** 対象を`WinningPartitionSpec.toDomainStandardCompletion`から
+**読解負荷の比較（最初の部品型移行時点）:** 対象を`WinningPartitionSpec.toDomainMentsuHandCompletion`から
 Pairと面子候補の共有カウントに至る経路に固定する。型はlocalとCoreのPair・面子候補の
 計4定義からCoreの2定義となった。部品変換は`toDomainDecomposition`、
 `toDomainPair`、`toDomainMentsuCandidates`、`toDomainMentsuCandidate`の4宣言から0となり、

@@ -78,13 +78,13 @@ Shantenの[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation
 
 **推奨:** ローカル変数名`hand`は変更せず、共有APIや横断資料では`Shanten.Hand`／待ち分類側の`Hand`のように修飾名を示します。型名を公開境界で単独使用する場合は、`ShantenHand`／`PhysicalTileHand`など、どのモデルか分かる名称を検討します。Tenhouコードを受け取る境界の型・変換は`TenhouId`などTenhou固有の名前で表し、変換実装を共有ユーティリティに一元化して、ドメインCoreやconsumerの内部表現へTenhou固有の型を漏らさないようにします。
 
-### P3 — `Standard`／`Special`語彙を識別子に使わない（方針反映）
+### P3 — `Standard`／`Special`語彙を識別子に使わない（実施済み）
 
-**方針:** `Standard`／`Special`という語彙は使いません。`Standard`が指していた面子手は`MentsuHand`と表記します。`Special`で七対子・国士無双を指していた箇所は、曖昧な総称を避けて対象の形を明記します。
+**方針:** 識別子では`Standard`／`Special`を使いません。面子手には`MentsuHand`を使い、七対子・国士無双には各形の名前を明記します。
 
-**改名対象:** Coreの[`StandardDecomposition`／`StandardCompletion`](https://github.com/bgnori/mahjong-domain-core/blob/e9dcbbcd51d649b1ad6a5dbd402bf6835992e720/MahjongDomain/Parts.lean)、待ち分類の[`IsStandardAgari`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitCompletionFinder.lean#L380)、およびこれらを参照する仕様・定理名は、いずれも面子手を表す語彙へ揃える対象です。Shantenの[`Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Special.lean)と[`Capacity/Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Special.lean)は七対子・国士無双だけを扱うため、対象の形を明記する改名対象です。
+**対応:** Coreの型を`MentsuHandDecomposition`／`MentsuHandCompletion`へ、待ち分類の述語を`IsMentsuHandAgari`へ改名し、関連する定理・証明検査・仕様参照も揃えました。Shantenの上限・牌数定数、待ち導出型も面子手を表す名前へ変更しました。七対子と国士無双の式・容量付きAPIを含むモジュールは[`SevenPairsAndThirteenOrphans.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/main/Shanten/SevenPairsAndThirteenOrphans.lean)と[`Capacity/SevenPairsAndThirteenOrphans.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/main/Shanten/Capacity/SevenPairsAndThirteenOrphans.lean)に改名し、importと現行案内を更新しました。公開APIに互換aliasは設けず、計算・証明の意味は変更していません。
 
-**別途対応する用例（Close）:** Shantenの[`specialKanStanding`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Examples.lean)は、固定槓を1つ持つ手の例名です。定義上、七対子・国士無双の計算結果がどちらも`none`になるケースであり、七対子・国士無双を指す`Special`用例ではありません。`standingHandWithOneFixedKan`へ改名し、Leanの例を検証しました（Shantenコミット`55da8bd`）。
+このP3とは独立する固定槓の用例`specialKanStanding`は、以前の対応で`standingHandWithOneFixedKan`へ改名済みです。
 
 ### P3 — `threeMeldStanding`は名詞の結び付きが分かりにくい（対応済み）
 
@@ -98,7 +98,7 @@ Shantenの[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation
 
 **推奨:** 次に整理する機会に、`WaitCompletionGrouping`、`WaitCoreReduction`、`WaitPathology`、`WaitDecompositionReporting`など責務を表すモジュールへ分割します。機械的な一括改名より、実際に共有される関数群を基準に分けるのが安全です。
 
-なお、待ち分類の`WinningPartitionSpec`は牌列と列挙された構成部品の仕様、Coreの`StandardCompletion`はカウントに一致する分解証人の仕様です。対応定理で接続されていますが、表現と用途が異なるため、同じ概念の重複として統合するより、それぞれの境界と変換を維持するのが適切です。
+なお、待ち分類の`WinningPartitionSpec`は牌列と列挙された構成部品の仕様、Coreの`MentsuHandCompletion`はカウントに一致する分解証人の仕様です。対応定理で接続されていますが、表現と用途が異なるため、同じ概念の重複として統合するより、それぞれの境界と変換を維持するのが適切です。
 
 ## 検証
 

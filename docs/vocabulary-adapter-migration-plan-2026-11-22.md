@@ -16,7 +16,7 @@
 - APIの改名に互換aliasは必須ではありません。意味・保証を照合してから切り替えます。
 - Core `Pair`は同一牌種ちょうど2枚です。手牌中の3枚・4枚は`TileCounts`に保持し、
   そこから2枚を選びます。手牌中の4枚を固定`Kan`に変換しません。
-- 候補の順序付き列挙や物理的な手牌などconsumer固有の使い方・状態はconsumerに残します。
+- 候補の順序付き列挙や手牌状態の用途・不変条件などconsumer固有の使い方・状態はconsumerに残します。
   部品を構成する順序付き牌列はCoreを正本とし、分類の順序付き出力を維持します。
 - Tenhou物理牌、Int37、Int34の表現・変換・容量規則はCoreを正本とし、Go実装も意味上
   の仕様に追随します。Goの言語に適した表現や固定済み`Meld`契約は維持します。
@@ -143,8 +143,9 @@ consumer固有の理由があり、対応する不在検査・回帰検査が通
 ## 対象外・保留
 
 - `Completion`をconsumer横断で統合・改名すること。意味、入力条件、証拠形式が異なるため別課題とします。
-- wait-classification固有の待ち分解、`WaitCore`、物理的`Hand`、候補の順序付き列挙のCore移管。
-- Shanten固有の`Hand`、現在の`Taatsu`、容量・探索方針のそのままの共有化。
+- wait-classification固有の待ち分解、`WaitCore`、テンパイ形を表す`Hand`の制約、候補の順序付き列挙のCore移管。
+  `TileCounts`を持つ共通基底`MahjongDomain.Hand`の案は[公開型名`Hand`の再検討](./four-repository-project-review-2026-11-22.md#p3--公開型名handだけではリポジトリ間の表現の違いが分からない)を参照。
+- Shanten固有の`Hand`の固定面子数・計算状態、現在の`Taatsu`、容量・探索方針のそのままの共有化。
   `Taatsu`や固定牌のうち共有可能な概念があるかは[別計画](./shanten-core-extraction-plan-2026-11-22.md)で再検討する。
 - Goの固定済み入力契約`Meld`をLeanの標準形候補へ統合すること。
 - 未決定のAPI名を、代表コードの評価・意味確認なしに一括改名すること。

@@ -68,15 +68,24 @@
 
 ### P3 — 公開型名`Hand`だけではリポジトリ間の表現の違いが分からない
 
-Shantenの[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Core.lean#L18)は牌種ごとのカウントと固定面子数を持つ計算用状態です。一方、待ち分類の[`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/Hand.lean#L18)は面子数と物理牌IDの埋め込みを持ち、そこから牌種列を得る牌姿です。これは関数内の変数名`hand`の問題ではありません。各プロジェクト内でその変数を`hand`と呼ぶのは自然です。問題は、横断資料や連携コードで公開型名の`Hand`だけを見ると、どのモデルを指すのか分かりにくいことです。
+この所見の初稿では、待ち分類の`Hand`を物理牌IDの埋め込みを持つ型と説明していました。しかし、その後の移行でTenhou IDは入力境界に隔離され、現行の待ち分類`Hand`もCoreの牌種カウントを保持する形に変わっています。以下は2026-11-23に確認した現行コードに基づく再検討です（Core `ffe7e09b2c8c1c898f0109e5755ad8b1e22bd315`、Shanten `579011dca7609d2198a3594304e7277ed1db3b22`、待ち分類 `d6bb8dc0edcc9b115800c2a1b7c70dae01a79f7e`）。
 
-**Tenhou IDについて:** このレビュー対象の待ち分類側`Hand`は、Coreの`MahjongDomain.PhysicalTileId`を使っています。その定義は`Fin (34 * copiesPerTile)`で、値はTenhouの安定した0始まりの136牌コードです。物理牌を識別するコードという分類は正しい一方、この具体的なTenhouコードを`PhysicalTileId`という汎用名の型にするのは適切ではありません。Tenhou固有の値であることが分かる`TenhouId`などの名前にすべきです。
+Shantenの[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/579011dca7609d2198a3594304e7277ed1db3b22/Shanten/Core.lean#L18)は、牌種ごとの`TileCounts`と固定面子数を持つ計算状態です。カウント上限の証拠は型に含めず、`ValidCounts`を別の述語として使います。待ち分類の[`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/d6bb8dc0edcc9b115800c2a1b7c70dae01a79f7e/Mahjong/Hand.lean#L15)は、同じく`TileCounts`を持ち、面子数に応じた総枚数と4枚上限の証拠を持つ牌姿です。Tenhou IDは[`decodeHand`](https://github.com/bgnori/mahjong-wait-classification/blob/d6bb8dc0edcc9b115800c2a1b7c70dae01a79f7e/Mahjong/TenhouInput.lean#L13)で境界変換され、内部の`Hand`には残りません。
 
-**方針:** このライブラリは牌姿を扱うツールであり、牌譜を扱うツールではありません。広く使われている形式であっても、Tenhouの牌コードに依存する処理をライブラリ内部へ広げず、Tenhouコードは入出力境界でのみ扱います。境界でTenhou IDをInt37またはInt34のカウントへ変換し、内部の牌姿表現・計算・APIは基本的にInt37／Int34で処理します。赤5を区別する必要がある処理はInt37、区別しない処理はInt34を用います。
+したがって、両者は牌の物理表現が違うのではなく、**同じ牌種カウントを異なる文脈・不変条件で使う型**です。Shantenは固定面子数を使う計算状態を表し、待ち分類は指定した面子手テンパイ形の牌姿を表します。共通化を考える対象は`TileCounts`に基づく手元牌の部分であり、固定面子数、面子手サイズ、総枚数、カウントの妥当性を一つのconsumer非依存な`Hand`へまとめることではありません。
 
-**変換の集約と配置:** Tenhou IDからInt37／Int34への変換はconsumerごとに重複実装せず、一箇所に集約します。この共通化が変換をCoreへ置く動機になった可能性はありますが、共有されることとドメインCoreに属することは別の判断です。牌種・Int37／Int34などのドメイン表現はCoreが定義し、Tenhou IDとその変換は`Core.Util`または専用codecのようなプロトコル境界のユーティリティに分ける構成が候補です。重要なのは、変換規則を一箇所に保ちつつ、Tenhou固有の型や規則をドメインCoreおよびconsumerの内部処理へ漏らさないことです。
+**Core.Handの設計案:** 共通の牌種カウントを持つ手元牌部分を明示するため、Coreに次のような基底型を置く案が最も整合的です。
 
-**推奨:** ローカル変数名`hand`は変更せず、共有APIや横断資料では`Shanten.Hand`／待ち分類側の`Hand`のように修飾名を示します。型名を公開境界で単独使用する場合は、`ShantenHand`／`PhysicalTileHand`など、どのモデルか分かる名称を検討します。Tenhouコードを受け取る境界の型・変換は`TenhouId`などTenhou固有の名前で表し、変換実装を共有ユーティリティに一元化して、ドメインCoreやconsumerの内部表現へTenhou固有の型を漏らさないようにします。
+```lean
+structure MahjongDomain.Hand where
+  counts : MahjongDomain.TileCounts
+```
+
+この`Hand`は、物理牌IDや固定面子の内訳を含まない、牌種カウントによる手元牌表現です。`TileCounts.Valid`は既存のCore規則として利用し、基底型の構築時に必須とはしません。これにより、Shantenの既存計算状態が許容する未検証カウントを表現でき、待ち分類側では必要な妥当性と総枚数の証拠を引き続き強制できます。Core `Hand`自体に固定面子数や`3n+1`の枚数制約を入れると、一方のconsumerの意味を他方へ誤って押し付けるため避けます。
+
+consumer側は独自の意味と保証を保ったまま、この基底型を埋め込む形にします。Shanten側には`fixedMelds`を持つ計算状態、待ち分類側には`mentsuCount`、`counts.Valid`および総枚数の証拠を持つテンパイ牌姿が残ります。公開境界では`Shanten.Hand`と待ち分類の牌姿型のように修飾名を使い、単独の`Hand`を横断APIで曖昧に使わないようにします。Coreの型を導入してもconsumer型を即座に同一型へ置き換えたり、別名だけの互換層を増やしたりしません。
+
+**採用条件と実施順:** この案は設計判断であり、Core `Hand`の実装はまだ行っていません。実装時は、(1)両consumerの公開型がCore基底型を直接埋め込み、重複した`counts`フィールドや変換adapterを持たないこと、(2)固定面子数・面子数・妥当性・総枚数の既存保証を弱めないこと、(3)Tenhou境界、探索・分類の結果および既存の無効入力の扱いを変えないこと、(4)Coreと両consumerのLeanビルド・回帰検査を通し、代表的な利用コードが複雑化しないことを確認します。Leanの型階層を介しても単なるwrapperや変換段数が増えるだけなら、Coreの既存`TileCounts`を共通基盤として維持し、新しい`Core.Hand`は導入しません。
 
 ### P3 — `Standard`／`Special`語彙を識別子に使わない（実施済み）
 

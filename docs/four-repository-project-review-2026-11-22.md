@@ -66,11 +66,15 @@
 
 **追記（2026-11-23）:** 可約性と病理判定が待ち核集合の一致で定義されていることから、`WaitCore`は不変条件を保証すべきと判断しました。`WaitCore`を`mentsuFree`証拠を持つ独立した構造体にし、一般の待ち分解からは`extractWaitCore`、逆方向は`WaitCore.toWaitDecomposition`による明示変換を要求する形で実装済みです。
 
-### P3 — `Hand`がリポジトリごとに異なる表現を指す
+### P3 — 公開型名`Hand`だけではリポジトリ間の表現の違いが分からない
 
-Shantenの[`Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Core.lean#L18)は牌種ごとのカウントと固定面子数を持つ計算用状態です。一方、待ち分類の[`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/Hand.lean#L18)は物理牌IDの埋め込みと面子数を持つ牌姿です。どちらも固有の意味はありますが、横断資料や連携コードで`Hand`だけを見ると、カウント表現か物理牌表現か判断できません。
+Shantenの[`Shanten.Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Core.lean#L18)は牌種ごとのカウントと固定面子数を持つ計算用状態です。一方、待ち分類の[`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/Hand.lean#L18)は面子数と物理牌IDの埋め込みを持ち、そこから牌種列を得る牌姿です。これは関数内の変数名`hand`の問題ではありません。各プロジェクト内でその変数を`hand`と呼ぶのは自然です。問題は、横断資料や連携コードで公開型名の`Hand`だけを見ると、どのモデルを指すのか分かりにくいことです。
 
-**推奨:** 独立した各プロジェクト内で`Hand`を維持する場合も、共有APIや横断資料では`ShantenHand`／`PhysicalTileHand`など表現を示す名前を使います。両型を同じLean文脈へ導入する場合は、修飾名を明示します。
+**物理牌IDについて:** このレビュー対象の待ち分類側`Hand`は独自のID型を定義しておらず、Coreの`MahjongDomain.PhysicalTileId`を使っています。Coreの定義は`Fin (34 * copiesPerTile)`で、コメントにも「Tenhouの安定した0始まりの順序」とあります。したがって、ここでいう物理牌IDは現状、Tenhouの136物理牌ID（0〜135）と理解して正しいです。
+
+**配置上の論点:** 物理牌の個体を識別する共通概念として各consumerが使うなら、ID型をCoreに置くこと自体は不自然ではなく、この対象コードでもすでにCoreが所有しています。一方、その番号がTenhouとの入出力に限られるなら、外部プロトコルの番号付けをCoreのドメイン表現として固定してよいかは別途判断が必要です。Tenhou番号を境界で変換する設計にするなら、プロトコル固有IDとCoreの物理牌表現を区別する必要があります。
+
+**推奨:** ローカル変数名は変更せず、共有APIや横断資料では`Shanten.Hand`／待ち分類側の`Hand`のように修飾名を示します。型名を公開境界で単独使用する場合は、`ShantenHand`／`PhysicalTileHand`など、どのモデルか分かる名称を検討します。あわせて、Tenhouの番号付けをCoreの共通表現として採用するのか、入出力アダプターの責務にするのかを明示します。
 
 ### P3 — `Standard`／`Special`語彙を識別子に使わない（方針反映）
 

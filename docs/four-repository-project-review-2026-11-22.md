@@ -64,6 +64,8 @@
 
 **推奨:** 麻雀上の意味を説明し、同じ待ち牌に異なる核が得られる`1223m`のようなケースを、`findWaitCores`の結果を確かめる実行可能なLean `example`で示します。`WaitCore`を独立型にするか、待ち牌ごとに候補をまとめる型を導入するかは、その意味を説明した後にAPI上の利点で判断すべきです。型の変更だけを先行させる必要はありません。
 
+**追記（2026-11-23）:** 可約性と病理判定が待ち核集合の一致で定義されていることから、`WaitCore`は不変条件を保証すべきと判断しました。`WaitCore`を`mentsuFree`証拠を持つ独立した構造体にし、一般の待ち分解からは`extractWaitCore`、逆方向は`WaitCore.toWaitDecomposition`による明示変換を要求する形で実装済みです。
+
 ### P3 — `Hand`がリポジトリごとに異なる表現を指す
 
 Shantenの[`Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Core.lean#L18)は牌種ごとのカウントと固定面子数を持つ計算用状態です。一方、待ち分類の[`Hand`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/Hand.lean#L18)は物理牌IDの埋め込みと面子数を持つ牌姿です。どちらも固有の意味はありますが、横断資料や連携コードで`Hand`だけを見ると、カウント表現か物理牌表現か判断できません。

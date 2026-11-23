@@ -136,15 +136,23 @@ PSSは共有ページを按分したプロセスのメモリ指標であり、�
 代表モジュールがビルドされなかった場合、その値は未採取となる。
 
 `main`へのpushの計測JSONは各実行のartifactに保存され、GitHubの保持期限で
-削除される。待ち分類のPagesは同リポジトリのCI成功時と毎日、3リポジトリの
-残存artifactから表示用データを生成する。期限切れの結果は次のPages更新時に
-消える。計測条件やCoreのrevisionも表示するが、異なる条件の値を直接比較
-できるとは限らない。
+削除される。各リポジトリのPagesは自分の残存artifactのみを読み取り、標準URLの
+`/<repository-name>/ci/`に公開する。更新はそのリポジトリのCI成功時と毎日行い、
+期限切れの結果は次の更新で消える。自リポジトリの`GITHUB_TOKEN`に
+`actions: read`を付与するため、横断アクセス用PATは不要である。
 
-Pagesのデプロイには、3リポジトリへのActions読み取り権限を持つfine-grained
-トークンを、待ち分類リポジトリのActions secret `LEAN_METRICS_TOKEN`に設定
-する。トークンはサーバー側でのみ使い、生成されたページには含めない。計測結果と
-revisionはPagesの公開範囲に従って公開される。未設定や取得エラーはPages
-ビルドを失敗させ、古い結果を新しいものとして公開しない。
-計測スクリプトはCoreにあり、両consumerのCIはCoreの`main`から取得する。
-初回導入時はCoreを先にpushしてからconsumer側をpushする。
+統括の[ダッシュボード](https://bgnori.github.io/mahjong-workspace/dashboard/)は
+各サイトの公開JSONをブラウザーで取得する。未公開・取得失敗のサイトは個別に
+エラー表示する。計測条件やCoreのrevisionも表示するが、異なる条件の値を
+直接比較できるとは限らない。計測結果とrevisionはPagesの公開範囲に従って公開される。
+
+各リポジトリで`ci/`をCI用に予約し、通常コンテンツとの衝突があればPagesの
+組み立てを失敗させる。サイト全体を一つのPagesワークフローで組み立てて
+デプロイし、独立したデプロイで他のコンテンツを上書きしない。待ち分類の
+全列挙レポートからCIページへのリンクは設けない。
+
+初回導入時はCoreを先にpushし、続いてconsumerと統括をpushする。Core、
+シャンテン、統括のリポジトリでは必要に応じてGitHubのSettings → Pagesで
+Sourceを「GitHub Actions」に設定する。計測・CIページ用の共通処理はCoreの
+`main`から取得する。旧構成で設定した`LEAN_METRICS_TOKEN`は使用しないので
+削除できる。

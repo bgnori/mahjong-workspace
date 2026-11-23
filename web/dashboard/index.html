@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Lean CIビルド計測ダッシュボード</title>
+  <link rel="stylesheet" href="metrics.css">
+  <script src="metrics.js" defer></script>
+  <script src="dashboard.js" defer></script>
+</head>
+<body>
+  <main>
+    <p><a href="../">Mahjong workspace</a></p>
+    <h1>Lean CIビルド計測ダッシュボード</h1>
+    <p>各リポジトリの公開CIページから計測結果を読み込みます。結果はartifactの保持期限と各サイトの更新に従います。</p>
+    <p>ピークPSSは0.25秒間隔のサンプリング値であり、短いピークは見逃すことがあります。CIのフルビルドはエディターの増分作業そのものではありません。runner、Lean、Coreの変更にも注意してください。グラフの横軸は実行順です。</p>
+    <p id="status">読み込み中…</p>
+    <div id="results"></div>
+  </main>
+</body>
+</html>

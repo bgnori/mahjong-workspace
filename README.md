@@ -19,3 +19,5 @@ development.
 
 The shared [Lean module policy](docs/lean-module-policy.md) describes the
 module system, incremental migration, and import analysis across the projects.
+The [CI metrics dashboard](https://bgnori.github.io/mahjong-workspace/dashboard/)
+reads the public `/ci/` data published by each source repository.

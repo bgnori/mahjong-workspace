@@ -78,7 +78,7 @@ Shantenの[`Hand`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be
 
 **改名対象:** Coreの[`StandardDecomposition`／`StandardCompletion`](https://github.com/bgnori/mahjong-domain-core/blob/e9dcbbcd51d649b1ad6a5dbd402bf6835992e720/MahjongDomain/Parts.lean)、待ち分類の[`IsStandardAgari`](https://github.com/bgnori/mahjong-wait-classification/blob/072d116cae1b1cf99a7172aef0e81eebcb4490d3/Mahjong/WaitCompletionFinder.lean#L380)、およびこれらを参照する仕様・定理名は、いずれも面子手を表す語彙へ揃える対象です。Shantenの[`Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Special.lean)と[`Capacity/Special.lean`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Special.lean)は七対子・国士無双だけを扱うため、対象の形を明記する改名対象です。
 
-**別途対応する用例:** Shantenの[`specialKanStanding`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Examples.lean)は、固定槓を1つ持つ手の例名です。定義上、七対子・国士無双の計算結果がどちらも`none`になるケースであり、七対子・国士無双を指す`Special`用例ではありません。この名前は個別の改名候補として切り分けます。
+**別途対応する用例（Close）:** Shantenの[`specialKanStanding`](https://github.com/bgnori/mahjong-shanten-calculation/blob/be918559edc584102d381e9d5a3f6f81324233f8/Shanten/Capacity/Examples.lean)は、固定槓を1つ持つ手の例名です。定義上、七対子・国士無双の計算結果がどちらも`none`になるケースであり、七対子・国士無双を指す`Special`用例ではありません。新しい名前は`standingHandWithOneFixedKan`とし、この個別指摘をCloseします。
 
 ### P3 — `threeMeldStanding`は名詞の結び付きが分かりにくい（対応済み）
 

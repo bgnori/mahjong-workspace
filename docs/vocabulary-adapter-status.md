@@ -1,15 +1,15 @@
 # 共有ドメイン語彙とAdapterの現状
 
 調査日: 2026-11-20
-方針更新日: 2026-11-22
+方針更新日: 2026-11-23
 
 更新前の記録は[履歴資料](./vocabulary-adapter-status-2026-11-20-archive.md)に保存しています。
 
 ## 要約
 
 `mahjong-domain-core`には共有Lean定義があり、シャンテン計算は牌種・カウント・
-面子候補を直接利用します。待ち分類も面子部品をCoreから直接利用し、牌種・物理牌の
-ローカル定義と共有仕様へのAdapterが残ります。
+面子候補を直接利用します。待ち分類も面子部品と牌種カウントをCoreから直接利用します。
+Tenhou IDは任意の入力境界アダプターでデコードし、分類の内部モデルには持ち込みません。
 Adapterは段階移行のための境界であり、移行可能な重複定義をCoreの直接利用へ
 収束させる方針です。以下の比較・改名検討には調査時点の記述も含みます。
 
@@ -17,8 +17,9 @@ Coreが「何であるか（what）」を定義し、consumerがそれを用い�
 「どう使うか（how）」を定義します。公開API名の改名に互換性エイリアスは要らない前提で
 進められますが、同じ語を不用意に一対一対応させず、概念の意味を確認してから統合します。
 
-Tenhou物理牌、Int37、Int34の表現・変換・容量規則はCoreが責任を持つ対象です。
-consumerはCoreの表現上で必要な処理を定義し、Go実装もそのCore仕様に追随します。
+Int37／Int34と牌種カウント・容量規則はドメインCoreが定義します。Tenhou IDは
+プロトコル固有の入力・出力形式として`MahjongDomain.Tenhou`アダプターに隔離します。
+Leanを正本として実装し、Go/PythonへのPortは後続段階で行います。
 
 移行の目的は、仕様のずれの防止、証明境界の単純化、保守箇所の削減に加え、
 Leanコードを読む負荷と似た定義を読み比べる機会を減らすことです。使い方の違いは
@@ -145,15 +146,15 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 | Core `Int37Counts` ↔ 旧Shanten Lean `Input37.Counts37` | **完全一致（移行済み）。** Shanten LeanはCoreの`Int37Counts`を直接使い、重複aliasを削除しました。Goの`Counts37`は固定長配列`[37]int`という別言語の表現ですが、意味上のスロット順・容量・赤5規約はCore定義に追随させます。 | Goではidiomaticな配列表現を維持しても構いませんが、別仕様として独立進化させずCoreの意味に追随します。 |
 | Core `orphanKinds` / `orphanTiles` ↔ 旧Shantenの么九牌定義 | **移行済み。** 端の数牌と字牌の13種を計算可能な集合として共有し、対象各種1枚の多重集合もCoreを正本とします。 | 集合の所属と13種・枚数を証明し、Shantenは直接利用します。国士の完成・探索はShantenに残し、列挙順は契約しません。 |
 | Core `Tile.index` ↔ 旧待ち分類 `Tile.orderKey` | **値の対応を確認して移行済み。** 旧adapterの`tileIndex_val`が値の一致を証明していました。 | 分類はCore添字の値を使い、旧キーは削除しました。全34牌種の列挙順を回帰検査します。 |
-| Core `PhysicalTileId : Fin 136` ↔ 旧待ち分類 `PhysicalTile := Tile × Fin 4` | **同じ物理牌で移行済み。** 旧adapterが牌種とcopyを保存してTenhou順IDへ写すことを証明していました。 | `Hand`はCore IDを直接保持し、全IDについて商が牌種index、余りがcopyであることと赤5境界を検査します。 |
+| Core `TenhouId : Fin 136` ↔ Int37／Int34カウント | **Tenhou入力アダプターへ分離済み。** `MahjongDomain.Tenhou`が範囲・重複を検査し、各カウント表現へ変換します。 | 待ち分類の`Hand`はInt34相当の`TileCounts`を保持し、Tenhou IDを内部表現に含めません。 |
 | Core `StandardCompletion` ↔ 待ち分類 `WinningPartitionSpec` / `IsStandardAgari` ↔ Shanten `Complete .mentsuHand` | **近縁だが同一ではない。** Coreはカウントと分解証人、待ち分類は牌リストと分割、Shantenは枚数制限・固定面子文脈を含みます。completionの証明形式・目的も異なります。 | ひとつの`Completion`へ無理に統合するのは後回しにします。`Standard` / `Special`だけでは意味が伝わらないため、Coreの仕様が何を保証するかを基に名前を再検討します。各consumerはCoreが定義するwhatを使い、固有の入力条件や計算方法は残します。 |
 
 ### 改名の優先順位
 
 1. **決定済み・高:** Coreの共有面子型をwait-classification由来の`Shuntsu`／`MentsuCandidate`（`.shuntsu`／`.koutsu`）へ改名します。Adapterで意味対応を確認した後、consumerをCore定義へ移してlocal型・移行Adapterを削除します。API互換aliasは必須ではありません。
 2. **決定済み・高:** Core `Pair`は厳密に2枚として維持し、既存`TileCounts`の同種牌カウントからPairを取り出すモデルにします。旧`Toitsu`との全値往復で移行前に対応を確認しました。4枚固定の`Kan`は手の内の4枚カウントとは別型・別状態として扱います。
-3. **中:** Shanten `Hand`は`HandState`等の抽象状態を表す名へ改名し、待ち分類の具体的な手牌型とは区別します。wait-classificationの`Hand`は物理牌を持つconsumer固有モデルとして維持し、必要なら`ConcreteHand`を検討します。
-4. **中:** `pairCount`の種類数意味を明確にする改名、Coreが持つ物理牌／Int37／Int34定義の直接利用、Go実装のCore仕様追随を行います。移行用adapterは置換が完了した範囲から削除します。
+3. **中:** Shanten `Hand`は`HandState`等の抽象状態を表す名へ改名し、待ち分類のカウントベースの手牌型とは区別します。
+4. **中:** `pairCount`の種類数意味を明確にする改名、Int37／Int34カウント定義の直接利用、Lean仕様を正本としたGo/PythonへのPortを行います。Tenhou ID変換は入力境界アダプターに限定します。
 5. **後回し／条件付き:** `Completion`のconsumer横断統一は条件・目的が異なるため保留し、Core仕様の保証内容に基づく名前を再設計します。`IsTenpai`は待ち分類が通常形だけを扱う文脈では自然で、Shantenのtenpai値と修飾して区別します。`WaitWitness`は任意の明確化案、`WaitCore`は意図的な用語として改名せず維持します。
 
 推奨する移行は、(1) Coreのwhat・語彙を確定、(2) local型とのadapterと対応証明を追加、
@@ -175,7 +176,7 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 | **Tenpai / テンパイ** | 待ち分類の[`IsTenpai`](https://github.com/bgnori/mahjong-wait-classification/blob/main/Mahjong/WaitCompletionFinder.lean)は、合法な通常形牌姿に通常形待ちが少なくとも1つあることです。Shantenのtenpaiは構造距離に基づく`shanten = 0`で、総合値では七対子・国士無双も候補です。 | **文脈差として正常。** 待ち分類が通常形のみを対象とする前提では`IsTenpai`は適切です。Shantenの値との同一性は主張せず、「通常形待ち」と「Shanten値0」を明記します。 |
 | **Wait / 待ち** | 待ち分類の[`Wait`](https://github.com/bgnori/mahjong-wait-classification/blob/main/Mahjong/WaitCompletionFinder.lean)は、候補牌と`IsWaitFor`証明を一体にした値です。`waitingTiles`は候補牌の列挙、`WaitCompletion.wait`と`WaitCore.wait`はその牌種値を保持します。 | **中。** 候補牌、証拠、列挙処理が同じ語根で現れます。`Wait`は証拠型であることを文書では明示し、改名する場合は`WaitWitness`が候補です。フィールド`wait`は牌種を保持するため、`waitTile`の方が自己説明的です。既存のnamespaceとコメントで区別できる場合、即時改名の必要性は低いです。 |
 | **Core / core** | `mahjong-domain-core`のCoreは共有ドメインライブラリです。一方、待ち分類の[`WaitCore`](https://github.com/bgnori/mahjong-wait-classification/blob/main/Mahjong/WaitDecompositionCode.lean)は待ち牌と残存成分列の組で、数学的なkernelとは異なる分類用語です。`WaitCoreExtraction.core`は抽出済みの待ち核（`WaitCore`）を指します。 | **改名不要。** `WaitCore`は意図して選ばれた分類語彙として維持します。説明ではCoreライブラリと待ち核を区別します。`CoreUtils`等はライブラリ／リポジトリの名前として必要性が確認された場合に限り別途検討します。 |
-| **Tile / Tiles / 牌** | Leanの`Tile`は3プロジェクトとも正規化された共有牌種です。物理的な1枚は共有の`PhysicalTileId`で表します。一方Goの`Meld.Tiles`は牌の列でなく、赤5を分ける`Counts37`カウントベクトルです。 | **中。** Coreが物理牌・Int37/Int34仕様を担い、Goも意味を追随します。Goフィールド`Tiles`はカウント配列だとコメントで明示し、公開API改名が自然な機会に`TileCounts`等を検討します。 |
+| **Tile / Tiles / 牌** | Leanの`Tile`は共有された正規化牌種です。待ち分類の`Hand`は`TileCounts`、つまり正規化牌種ごとの個数で表します。Tenhou IDは入力境界の形式です。一方Goの`Meld.Tiles`は牌の列でなく、赤5を分ける`Counts37`カウントベクトルです。 | **中。** Coreが牌種・Int37/Int34仕様を定義し、Leanを正本としてGo/PythonへPortします。Goフィールド`Tiles`はカウント配列だとコメントで明示し、公開API改名が自然な機会に`TileCounts`等を検討します。 |
 
 ### 同名語の対応方針
 
@@ -186,9 +187,9 @@ Shantenの`pairCount`は2枚以上ある牌種の種類数を数える量で、P
 
 ## Lean以外の公開型について
 
-GoコードがLeanの型をimportする構成ではありませんが、Tenhou/Int37/Int34の意味・
-インデックス順・容量・赤5規則はCoreを正本としてGo実装が追随する方針です。
-Goの`Counts37 [37]int`のような言語に適した表現は維持できます。
+GoコードがLeanの型をimportする構成ではありません。Int37／Int34の意味・インデックス順・
+容量・赤5規則はLeanを正本として後続Portで追随します。Tenhou IDのdecodeもGo側へPortする際、
+入力境界に限定する方針です。Goの`Counts37 [37]int`のような言語に適した表現は維持できます。
 
 Goの[`Meld`](https://github.com/bgnori/mahjong-shanten-calculation/blob/main/shanten.go)はchi・pon・ankan・daiminkan・
 kakan等の固定済みセットを表す契約型で、Leanの面子形とは意図的に異なります。
@@ -261,30 +262,28 @@ consumer側の同義定義とAdapterを、決定したCore APIへ段階的に移
      `w6`の`lake build`が成功し、標準完成・Pair対応を含む`sorryAx`検査と
      既存の探索・固定槓・入力回帰例が通りました。
 
-4. **Go契約をCore仕様と照合する。**
+4. **Lean仕様の確定後にGo/PythonへPortする。**
    - Goの`Meld`は固定済み入力契約として維持し、Leanの`MentsuCandidate`へ改名・統合
-     しません。standing countsと固定槓の占有枚数・容量制約がCoreの牌表現と一致することを
-     確認します。
-   - **完了条件:** 差分がある場合は境界テストを追加し、`go test ./...`と`go vet ./...`
-     を通します。Goに対応する数値テストがない場合、`go test`はビルド確認に留まることを
-     明記します。
+     しません。牌表現・Int37／Int34変換・容量規則をLean仕様へ合わせ、Tenhou IDは
+     入力境界でのみデコードします。
+   - **完了条件:** Port後に言語ごとの境界テストを追加し、各プロジェクトのbuild・testを通します。
 
 5. **移行用Adapter・重複を片付け、文書を揃える。**
    - Core型へ直接切り替わり、往復・意味対応証明が不要になった範囲からadapterとlocal型を
      削除します。未移行の表現変換に使うadapterや、consumer固有の状態・ロジックは残します。
    - **Shanten Lean側は完了。** Int37の重複alias・写像／容量／集約wrapperと、候補牌展開・
-     カウント変換wrapperを削除し、Core APIを直接使うよう更新しました。wait-classification側の
-     牌種・物理牌のlocal型・Adapterも削除済みです。Goとの照合は後続で行います。
+     カウント変換wrapperを削除し、Core APIを直接使うよう更新しました。wait-classification側は
+     牌種カウントを利用し、Tenhou IDを入力アダプターへ分離しました。Go/PythonへのPortは後続です。
    - glossary、API説明、移行状況を実装に合わせて更新し、`Completion`は現行仕様のまま
      別課題として記録します。
    - **完了条件:** Coreとconsumerで同じwhatを表す重複型が対象範囲に残らず、利用中の
      変換・証明が残作業またはconsumer固有の理由と結び付いていること。Coreとconsumerの
-     Lean build、wait-classificationのLeanテスト、該当するGo検査が成功すること。
+     Lean buildとwait-classificationのLeanテストが成功すること。
 
 ### 依存関係とリスク
 
-順序は **Core →（wait-classification、Shantenを並行移行可能）→ adapter整理** です。
-Go照合はCoreの表現規則が確定した後ならLean移行と並行できます。Shantenは`Meld`・
+順序は **Core → wait-classification Lean → adapter整理・完了検査 → Go/Python Port** です。
+Shantenは`Meld`・
 `pairTiles`を参照する証明が多数の`MentsuHand`／`Capacity`モジュールへ広がるため、
 Core定理を先に固定し、基礎型から下流へ小刻みに移すのが主なリスク対策です。
 `Completion`の意味統一はこの依存グラフに含めません。

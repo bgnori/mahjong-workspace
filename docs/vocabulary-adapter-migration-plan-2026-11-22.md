@@ -29,16 +29,15 @@
 | `mahjong-domain-core` | **完了** | 共有`Shuntsu`／`MentsuCandidate`と`.shuntsu`／`.koutsu`、厳密な`Pair`、`TileCounts`からのPair分解を実装済み。Core build確認済み。 |
 | `mahjong-shanten-calculation` Lean | **既存Core型への移行は完了** | 牌種・カウント・面子候補をCoreから直接利用。追加の共通機能抽出は[別計画](./shanten-core-extraction-plan-2026-11-22.md)で調査する。 |
 | `mahjong-wait-classification` 面子部品 | **実装・機械検証済み、人手確認待ち** | Coreの部品型・牌種と順序付き展開を直接利用し、local型と`PartsAdapter.lean`を削除。回帰検査・CI不在検査あり。読解負荷の人手確認は未実施。 |
-| `mahjong-wait-classification` 牌・物理牌表現 | **実装・機械検証済み、人手確認待ち** | Coreの牌種・index・`PhysicalTileId`を直接利用し、重複型と`DomainAdapter`を削除。列挙・ID・赤5境界と既存分類の回帰検査あり。 |
-| Go実装 | **照合未完了** | 固定済み`Meld`契約は維持する。牌表現、Tenhou/Int37/Int34の順序、容量、赤5規則、および固定槓とstanding countsの境界をCoreと照合する。 |
+| `mahjong-wait-classification` 牌・手牌表現 | **Lean実装・機械検証済み** | `Hand`はInt34相当の`TileCounts`を保持。Tenhou IDはCoreの任意アダプターで範囲・重複を検査して境界で変換する。Go/PythonへのPortは後続。 |
+| Go実装 | **後続Port** | Lean仕様の確定後にPortする。固定済み`Meld`契約は維持し、Tenhou IDは入力境界に限定する。 |
 | 不在検査・文書・読解負荷 | **未完了** | 完了した概念ごとのlocal宣言・移行用変換の不在検査、用語資料の同期、代表処理の読みやすさ比較を追加・記録する。 |
 
 ## 実施計画
 
-順序は **Core（完了）→ wait-classification → adapter整理・完了検査** とします。
+順序は **Core（完了）→ wait-classification Lean → adapter整理・完了検査 → Go/Python Port** とします。
 Shantenの既存Core型へのLean移行は完了済みです。追加の共有機能抽出は別計画で進めます。
-Go照合はCoreの表現規則に対する確認なので、wait-classification
-の移行と並行して実施できます。各段階は意味・振る舞いの確認を通過してから完了扱いにします。
+Go/PythonのPortはLean仕様の実装・検証後に行います。各段階は意味・振る舞いの確認を通過してから完了扱いにします。
 
 ### 1. wait-classificationの面子部品をCore型へ移す（人手確認待ち）
 
@@ -77,15 +76,15 @@ Coreの`Pair.tiles`、移行後は分類側の`ClassificationPair.tiles`とCore�
 `orderedTiles_toDomain`対応定理は共通の計数補題に置き換えた。
 これらは代理指標であり、複雑さや読みやすさの人手確認は未実施のため、本段階を最終完了にはしない。
 
-### 2. wait-classificationの牌・物理牌表現をCoreへ移す
+### 2. wait-classificationの牌種・カウント表現をCoreへ移し、Tenhou IDを境界に隔離する
 
-**対象:** `Suit`、`Honor`、`Tile`、牌種index、`PhysicalTile`と`DomainAdapter.lean`。
+**対象:** `Suit`、`Honor`、`Tile`、牌種index、`Hand`の牌種カウント表現、Tenhou入力アダプター。
 
 1. `Tile.numbered`とCore `Tile.suited`、スート名、牌種indexについて、値の意味・順序・利用箇所を照合する。
    名前候補に未決定事項がある場合は、現状資料で定めた代表コードの読みやすさ評価を行い、結果と判断理由を残す。
 2. Coreの牌種とindexを直接利用し、分類側で必要なソート・列挙方法はconsumer側に残す。
-3. `PhysicalTile`からCore `PhysicalTileId`への移行では、牌種・copy・Tenhou順IDの対応を証明し、
-   物理牌の列挙順やHandの不変条件を確認する。
+3. Tenhou形式を利用する入力境界でのみ`TenhouId`をデコードし、範囲・重複を検査して
+   Int37／Int34カウントへ変換する。内部の`Hand`はカウントと枚数・容量の不変条件で表す。
 4. 各表現の利用が切り替わった範囲から不要な変換とlocal定義を削除する。
    `DomainAdapter`全体は未移行の対応が残る間は維持し、一括削除しない。
 
@@ -96,13 +95,11 @@ Coreの`Pair.tiles`、移行後は分類側の`ClassificationPair.tiles`とCore�
 対応し、既存Core APIを通じて分類とShantenの同じ概念を一貫して読めるため採用した。
 人手による読みやすさ確認は引き続き未実施。
 
-**牌種・物理牌の実施結果:** Core `Tile`、`Honor`、`TileFormat`、`PhysicalTileId`を直接使用し、
-旧ローカル型と`DomainAdapter.lean`、Shanten連携の牌変換・往復証明を削除した。
-`Hand`の埋め込みは位置ごとに物理IDを保持し、同じIDの重複禁止と位置順を維持する。
-旧Adapterは`index * 4 + copy`の牌種・copy保存を証明していた。移行後は任意のIDを
-その牌種indexと余りで再構成できること、34牌種の列挙順、各色の赤5と通常5の境界を
-検査する。`deck`は有限集合であり、その列挙順を公開契約として扱わない。
-既存の待ち・分類コード・重複・表示例とCI不在検査も維持する。
+**牌種・手牌の実施結果（Lean）:** Coreの`Tile`、`Honor`、`TileFormat`とInt37／Int34表現を利用する。
+Tenhou固有のID・デコーダ・カウント変換は`MahjongDomain.Tenhou`に分離し、範囲外と重複IDを拒否する。
+待ち分類の`Hand`は正規化牌種ごとの`TileCounts`と枚数・容量の証拠を保持し、Tenhou IDを含まない。
+Tenhouを使う呼び出し側は`Mahjong.TenhouInput.decodeHand`を入力境界で呼び、以降はカウント表現を使う。
+既存の待ち・分類コードと回帰例を維持し、Go/PythonへのPortはLean実装の後に行う。
 
 **名前と読解負荷:** 旧`WinningComponent.pair (.numbered .man 4)`は
 `WinningComponent.pair (.suited .man 4)`、旧`.honor .East`は

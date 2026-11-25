@@ -31,16 +31,16 @@
 
 ### [P2] INT64範囲と可逆性の契約が実装で保証されていない
 
-[`fixedKeyLimit`](../mahjong-hand-hash/MahjongHandHash/HandKey.lean) は定義されているが使われていない。両方のencodeはキー値を `Int.ofNat` で返すのみで、符号付き64ビット上限との照合を行わない。また、実装にはencode/decodeの往復、単射性、全出力の範囲を示す証明がなく、現在のテストにもこれらの全域保証はない。
+**対応済み（実行時契約検査）。** 両方のencodeは、算出値が `fixedKeyLimit` 以下であることを確認し、decodeした結果が入力と同じ牌姿（鳴き込みキーでは固定面子順を正規化）に戻る場合のみ成功する。両方のdecodeも負値・`fixedKeyLimit` 超過を拒否し、成功結果を再encodeした値が入力キーと一致することを確認する。検査に失敗した場合は `roundTripFailure` または `keyOutOfRange` を返す。
 
-候補数の見積りが `2^63` 未満であることだけでは、実装したrank/unrankと出力値の契約を証明したことにならない。永続化を許可する前に、計画書の受け入れ条件にある証明または同等の厳密な検証を完了し、テストベクトルを固定する必要がある。
+回帰テストでは両キー空間の計算上限がINT64内であることと、INT64最大値を超えるdecodeの拒否を確認する。全域のLean定理そのものは未実装だが、APIは個々の呼び出しで範囲と往復を検査するため、未検査値を成功として返さない。なおencode時にdecodeも実行するため、検査コストが加わる。
 
 ## 検証
 
 - `lake build MahjongHandHash MahjongHandHashTests` は成功した。Coreの `MahjongDomain/Parts.lean` からlint警告が出たが、今回のレビュー対象のビルド失敗ではない。
 - 上記の衝突例は修正前に `lake env lean --stdin` で両入力をencodeして確認した。
-- 現在の [`HandKey` テスト](../mahjong-hand-hash/MahjongHandHashTests/HandKey.lean) はコンパイル時の評価例と基本的な往復例を含むが、複数固定面子の順位付け、2キー空間の取り違え、INT64上限を検査していない。
+- [`HandKey` テスト](../mahjong-hand-hash/MahjongHandHashTests/HandKey.lean) は両キー空間の上限とINT64超過キーの拒否を検査する。エンコード成功時の逆変換検査はAPI内で行う。
 
 ## 判定
 
-P1の衝突を修正し、P2の型分離と保証不足を解消するまでは、解析結果を保存する永続キーとして公開・使用しないこと。
+P1の衝突とINT64・実行時可逆性検査の指摘は対応済み。P2の型分離は未対応であり、初版番号付けの正式な版固定や全域定理も未完了のため、解析結果を保存する永続キーとしての公開・使用は引き続き保留する。

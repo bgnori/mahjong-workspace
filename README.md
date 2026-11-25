@@ -19,6 +19,8 @@ development.
 
 The shared [Lean module policy](docs/lean-module-policy.md) describes the
 module system, incremental migration, and import analysis across the projects.
+The [Dev Container Git authentication notes](docs/git-authentication-devcontainer.md)
+describe credential sharing and the observed local configuration.
 The [hand perfect-hash plan](docs/hand-perfect-hash-plan.md) specifies
 reversible keys for tile collections and hands with fixed melds.
 The [CI metrics dashboard](https://bgnori.github.io/mahjong-workspace/dashboard/)

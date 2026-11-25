@@ -4,6 +4,7 @@ This repository contains workspace configuration and shared documentation.
 The Lean source projects remain independent repositories:
 
 - `mahjong-domain-core`
+- `mahjong-hand-hash`
 - `mahjong-shanten-calculation`
 - `mahjong-wait-classification`
 

@@ -1,4 +1,5 @@
 /mahjong-domain-core/
+/mahjong-hand-hash/
 /mahjong-shanten-calculation/
 /mahjong-wait-classification/
 /todo.txt

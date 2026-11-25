@@ -3,6 +3,10 @@
     {
       "name": "mahjong",
       "path": "."
+    },
+    {
+      "name": "mahjong-hand-hash",
+      "path": "mahjong-hand-hash"
     }
   ],
   "extensions": {

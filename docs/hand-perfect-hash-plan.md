@@ -115,6 +115,9 @@ Leanで証明している。詳細は[hand-hash README](../mahjong-hand-hash/REA
 
 調査日: 2026-11-26
 
+案Aに基づく共有型と既存概念の再利用、各consumerへの射影については
+[共有牌姿表現の設計案](./shared-hand-representation-design.md)を参照する。
+
 ### 結論
 
 最も近いのはhand-hash試案の

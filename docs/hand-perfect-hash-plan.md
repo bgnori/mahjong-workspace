@@ -42,8 +42,8 @@
    区別する。暗槓も区別し、加槓では元のポンの鳴き元を保持する。チーの鳴き元は
    四人麻雀では上家である。大明槓と加槓は別とし、固定面子がない牌姿も対象とする。
 
-`TileCountsKey`は試案の実装で別型として定義されている。鳴き込みキーの実装名はまだ
-`MeldedHandKey`である。まず牌集合キーを実装・証明し、その後に鳴き込みキーを扱う。
+`TileCountsKey`と`MeldAwareHandKey`は試案の実装で別型として定義されている。
+鳴き込みキーは共有`HandSnapshot`を入出力に使うが、全域の証明と版固定は未完了である。
 用語の詳細は[hand hash用語集](../mahjong-hand-hash/docs/GLOSSARY.md)を参照する。
 
 固定面子の**鳴いた順序は両キーに含めない**。鳴き込みキーでは、固定面子を順序を
@@ -120,24 +120,23 @@ Leanで証明している。詳細は[hand-hash README](../mahjong-hand-hash/REA
 
 ### 結論
 
-最も近いのはhand-hash試案の
-[`MahjongDomain.MeldedHand`と`FixedMeld`](../mahjong-hand-hash/MahjongHandHash/HandKey.lean)である。
-`MeldedHand`は手元牌の`TileCounts`と固定面子のリストを持ち、
-`MeldedHand.encode`の入力かつ`MeldedHand.decode`の成功結果になっている。
-固定面子なしも空リストで表せる。ただし、これらは**hand-hash内の試案**であり、
-Coreの共有型ではない。現状の型自体は枚数・容量の妥当性や固定面子の順序を
-無視した同一性を保証しない。既存の構造を出発点にしつつ、共有ドメイン概念と
-キー固有の制約・符号化を分離して設計するのが妥当である。
+調査時に最も近かったhand-hash試案を基に、
+[`HandSnapshot`と`FixedMeld`](../mahjong-domain-core/MahjongDomain/HandSnapshot.lean)を
+Coreに実装した。手元牌の`TileCounts`と固定面子のリストを持ち、
+`MeldAwareHandKey.encode`の入力かつ`decode`の成功結果になる。
+固定面子なしも空リストで表せる。型自体は枚数・容量を検証せず、
+`HandSnapshot.Equivalent`と`same`は固定面子の順序を無視する。
+キー固有の制約と符号化はhand-hashで扱う。
 
 | 既存の表現 | 保持するもの | 鳴き込みキーへの適合性 |
 |---|---|---|
-| hand-hash [`MeldedHand` / `FixedMeld`](../mahjong-hand-hash/MahjongHandHash/HandKey.lean) | 手元カウント、固定面子の種類・牌種、必要な鳴き牌・鳴き元。リストで重複も保持。 | 必要な情報に最も近い。検証と順序の正規化は別の操作であり、双方向性の全域証明は未完了。 |
-| Core [`Hand`](../mahjong-domain-core/MahjongDomain/Hand.lean)、[`Shuntsu` / `MentsuCandidate` / `Kan.occupiedTiles`](../mahjong-domain-core/MahjongDomain/Parts.lean) | `Hand`は手元カウントだけ。部品は順子・刻子の形や槓の4枚占有を表す。 | 共通部品として再利用できるが、固定面子の種類・鳴き牌・鳴き元や、手元牌と固定面子を組にした型はない。`MentsuCandidate`は固定・副露状態ではない。 |
+| Core [`HandSnapshot` / `FixedMeld`](../mahjong-domain-core/MahjongDomain/HandSnapshot.lean) | 手元カウント、固定面子の種類・牌種、必要な鳴き牌・鳴き元。リストで重複も保持。 | 鳴き込みキーの入出力として利用。検証と順序の正規化は別の操作であり、双方向性の全域証明は未完了。 |
+| Core [`Hand`](../mahjong-domain-core/MahjongDomain/Hand.lean)、[`Shuntsu` / `MentsuCandidate` / `Kan.occupiedTiles`](../mahjong-domain-core/MahjongDomain/Parts.lean) | `Hand`は手元カウントだけ。部品は順子・刻子の形や槓の4枚占有を表す。 | `FixedMeld`で共通部品を再利用する。`MentsuCandidate`は固定・副露状態ではない。 |
 | シャンテンLean [`Hand`](../mahjong-shanten-calculation/Shanten/Core.lean)、[`Capacity.FixedMeld`と`ValidHand`](../mahjong-shanten-calculation/Shanten/Capacity/Basic.lean) | `Hand`は手元カウントと固定面子数。容量付きモデルでは別に固定面子の形・槓の牌を受け取る。 | 合算容量と枚数条件の先例。ただしチーの鳴き牌、ポン・明槓の鳴き元、暗槓・大明槓・加槓の区別は保持しない。 |
 | シャンテンLean [`Input37.Input` / `NormalizedInput`](../mahjong-shanten-calculation/Shanten/Input37/Validation.lean)、Go [`Input` / `Meld`](../mahjong-shanten-calculation/shanten.go) | 生入力は手元牌と固定面子ごとの種類・Int37牌数を保持。Leanの正規化結果は`Hand`と`Capacity.FixedMeld`のリスト。 | 生入力は槓の種類と赤5を保持するが、鳴き牌・鳴き元はない。正規化結果はさらに槓の種類を忘れるため、いずれも単独ではキーの入力を復元できない。 |
 | 待ち分類 [`Hand`](../mahjong-wait-classification/Mahjong/Hand.lean) | 手元カウント、通常形の残り面子数、カウントと聴牌枚数の証拠。 | 固定面子の内容を持たず、対象も通常形の聴牌手牌に限定される。 |
 
-試案の`FixedMeld`は、チーを`Suit`・開始位置`Fin 7`・鳴き牌の
+共有`FixedMeld`は、チーを`Shuntsu`・鳴き牌の
 `Fin 3`のオフセットで表し、鳴き元は四人麻雀の上家に固定する。ポン・大明槓・
 加槓は牌種と3方向の`RelativeCaller`を持ち、加槓の鳴き元は元のポンのものと
 解釈する。暗槓は牌種だけを持つ。チーのオフセットは順子の先頭・中央・末尾に対応し、
@@ -160,16 +159,16 @@ Coreの共有型ではない。現状の型自体は枚数・容量の妥当性�
 - これは構造上の条件であり、赤牌の個体や鳴きの時系列、特定の牌譜・ルールでの
   到達可能性を保証しない。
 
-試案の[`MeldedHand.valid`](../mahjong-hand-hash/MahjongHandHash/HandKey.lean)は
+試案の[`HandSnapshot.valid`](../mahjong-hand-hash/MahjongHandHash/HandKey.lean)は
 面子数・手元枚数・手元カウント・合算容量を実行時に検査し、不正入力を
 `Except`で拒否する。固定面子単体の形やチーのオフセット等はコンストラクタの
-型で制限している。`MeldedHand`を構築できること自体は妥当性の証明ではない。
+型で制限している。`HandSnapshot`を構築できること自体は妥当性の証明ではない。
 共有型にどの不変条件を内包し、キー対象の条件を述語・検証済み型のどちらで表すかは
 未決定とする。少なくとも、13・14枚相当というキーの対象制約を、より広い用途の
 共有データ構造に無条件で課すとは限らない。
 
 試案はリストを[`sortFixedMelds`](../mahjong-hand-hash/MahjongHandHash/HandKey.lean)で
-ソートして符号化し、`MeldedHand.same`で手元カウントとソート済みリストを比較する。
+ソートして符号化し、Coreの`HandSnapshot.same`で手元カウントと面子の順列を比較する。
 decodeの結果も試案の正規順のリストとなり、元のリスト順には戻らない。
 したがって往復契約はリストの文字通りの一致ではなく、手元カウントと固定面子の
 多重度・内容が一致することとする。`List`＋順列同値、正規順リスト、`Multiset`

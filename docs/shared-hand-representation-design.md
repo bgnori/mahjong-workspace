@@ -7,7 +7,8 @@
 各リポジトリが同じ意味の牌姿を交換し、完全ハッシュをその牌姿に対して
 計算できるようにする。[牌姿キーの計画](./hand-perfect-hash-plan.md)と
 議論した案Aを基に、正規化済みの牌姿と固定面子をCoreの共有概念として設計する。
-以下は実装前の設計案であり、型名・API・交換形式の確定や実装完了を意味しない。
+Coreの共有型、hand-hashの入出力、シャンテン向け射影を試作済みである。
+交換形式やキーの版固定、全域の証明、他consumerの移行は未完了である。
 
 Coreが牌姿の意味を定義し、各consumerがその使い方を定義する。各リポジトリに
 同じ概念の別定義を維持せず、段階移行後はCoreの型を直接利用する。言語を
@@ -16,7 +17,8 @@ Coreの牌姿の定義とは分離する。
 
 ## 共有牌姿の構成
 
-概念上の形は次のとおり。名前は説明用であり、Leanの確定済み宣言ではない。
+概念上の形は次のとおり。実装では固定面子をリストで保持し、
+同一性で順列を無視する。
 
 ```text
 HandSnapshot
@@ -40,8 +42,8 @@ HandSnapshot
 [`Shuntsu`、`MentsuCandidate`、`Kan.occupiedTiles`](../mahjong-domain-core/MahjongDomain/Parts.lean)
 を正本として使う。同じ順子・刻子・槓占有を表す別型や別名を新設しない。
 [`MahjongDomain.Hand`](../mahjong-domain-core/MahjongDomain/Hand.lean)は現在、
-手元カウントだけを表す。これを牌姿全体と同一視せず、手元部分を既存型で包むか
-`TileCounts`を直接フィールドにするか、手元部分の改名と合わせて決める。
+手元カウントだけを表す。これを牌姿全体と同一視せず、`HandSnapshot`は
+`TileCounts`を直接フィールドに持つ。手元部分の改名は未決定である。
 
 固定面子は面子の形に加えて固定・鳴きの情報を持つため、新たな共有概念として
 必要である。次は構成の例であり、同じ情報を別フィールドに重複保持しない。
@@ -59,9 +61,9 @@ FixedMeld
 `calledOffset`は既存の`Shuntsu.orderedTiles`における先頭・中央・末尾を表し、
 チーの鳴き元は四人麻雀では上家である。ポン・大明槓・加槓の`caller`は
 下家・対面・上家の相対位置とし、加槓は元のポンの鳴き元を保持する。
-暗槓は鳴き元を持たない。`RelativeCaller`の名前は仮であり、
-[hand-hash試案](../mahjong-hand-hash/MahjongHandHash/HandKey.lean)に同じ概念の
-定義がある。Core移行時にはそれを置き換え、並行する正本を作らない。
+暗槓は鳴き元を持たない。`RelativeCaller`はhand-hash試案にも定義があったが、
+実装では[Core](../mahjong-domain-core/MahjongDomain/HandSnapshot.lean)に移し、
+hand-hash側の重複定義は取り除いた。
 
 占有牌の展開ではチーに`Shuntsu.tiles`、ポンに
 `MentsuCandidate.koutsu`の牌展開、槓に`Kan.occupiedTiles`を再利用する。
@@ -75,9 +77,9 @@ FixedMeld
 
 共有型を構築できることと、キー対象として有効であることは分ける。
 固定面子単体については、たとえば`Shuntsu`と`Fin 3`により不正な順子や
-範囲外の鳴き位置を表せないようにする。牌姿全体の条件を型に内包するか、
-述語・検証済み型で表すかは実装設計時に決める。外部データの取り込みは
-不正値を明示的に拒否する。
+範囲外の鳴き位置を表せないようにする。現状の共有型は牌姿全体の条件を
+内包せず、hand-hashはencode時に検証する。検証済み型などの設計は今後の課題とする。
+外部データの取り込みは不正値を明示的に拒否する。
 
 鳴き込みキーの対象では、固定面子数を`m`、手元牌数を`h`として：
 
@@ -127,7 +129,9 @@ rankする。`Shuntsu`の利用はチーのスート・開始位置をまとめ�
 計算向け射影で失ってよい。現在の
 [`Shanten.Capacity.FixedMeld`と`ValidHand`](../mahjong-shanten-calculation/Shanten/Capacity/Basic.lean)
 は、形と合算容量を扱う先例である。暗槓も固定面子として渡す。
-射影が占有牌・固定面子数・シャンテン結果を保存することを移行時に検証する。
+[`ofHandSnapshot`](../mahjong-shanten-calculation/Shanten/Capacity/HandSnapshot.lean)を
+試作し、面子ごとの占有牌と固定面子数、代表的なシャンテン結果を実行例で確認した。
+射影自体は妥当性を検査しないため、利用側で容量と枚数を検査する。
 
 逆に、現行の[シャンテンGo入力](../mahjong-shanten-calculation/shanten.go)は
 鳴き元とチーの鳴き牌を持たないため、単独では共有牌姿を復元できない。

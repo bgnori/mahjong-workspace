@@ -283,6 +283,33 @@ encode/decodeは内部計算を`Nat`で行い、範囲の定理を得た後に�
 現行番号付けについては、区間内に穴がなく、`0 ≤ key < keyMax`がdecode成功の必要十分
 条件であることを証明済みである。予約値は設けない。
 
+##### Leanのエラー処理に関するメモ
+
+decoderの公開APIは、利用先での検証・診断方法が未定のため決めていない。
+現在の`TileCountsKey.decode`は`Except TileCountsKeyError TileCounts`を返す試案であり、
+範囲外キーは`keyOutOfRange`になることを証明済みである。
+
+Leanで検討できる表現には、次のようなものがある。
+
+- **`Option α`:** 成功値か`none`を返す。値の不存在だけを表せるが、失敗理由は持たない。
+- **`Except Error α`:** 成功値か型付きのエラーを返す。理由を区別できるが、
+  エラーの分類と利用側での扱いを決める必要がある。
+- **前提の証明を引数にする:** 有効性を証明した入力に限り、失敗のない結果を返す。
+  呼び出し側で前提を示す必要がある。
+- **有効性を持つ型を使う:** 値と有効性の証明をまとめ、検証済みの値に対する
+  操作を失敗しない形にできる。外部値を受け取る境界では別途検証が必要になる。
+- **`IO`の例外:** ファイル操作など外部環境とのやり取りに伴う失敗を扱える。
+  純粋な符号化・復号処理とは区別する。
+
+`Option`と`Except`はともに`do`記法で失敗を伝播できる。`Except.toOption`はすべての
+エラーを`none`に変換して理由を失うため、利用する場合は内部不整合を通常の範囲外と
+区別する必要がないか検討する。`panic!`や`!`付きの操作もあるが、回復可能な失敗の
+通常処理とは区別する。これらの記述は選択肢のメモであり、APIの採用方針ではない。
+
+参考: [Lean公式: 添字と証明](https://lean-lang.org/functional_programming_in_lean/Interlude___-Propositions___-Proofs___-and-Indexing/)、
+[OptionとExcept](https://lean-lang.org/functional_programming_in_lean/Monad-Transformers/A-Monad-Construction-Kit/)、
+[Except API](https://lean-lang.org/doc/api/Init/Control/Except.html)。
+
 #### 5. 番号付けの方式：2案
 
 - **案A — 現行の枚数別rankと固定面子組rankを固定（推奨）:** 牌種順、

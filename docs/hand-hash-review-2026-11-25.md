@@ -25,9 +25,11 @@
 
 ### [P2] 2つのキー空間がLean上で区別されない
 
-[`TileCollectionKey` と `MeldedHandKey`](../mahjong-hand-hash/MahjongHandHash/HandKey.lean) はどちらも `abbrev ... := Int` である。そのため、牌集合キーを `MeldedHand.decode` に渡す、または鳴き込みキーを `TileCollection.decode` に渡すコードが型検査を通り、異なる空間のキー同士もそのまま比較できる。
+レビュー時の [`TileCollectionKey` と `MeldedHandKey`](../mahjong-hand-hash/MahjongHandHash/HandKey.lean) はどちらも `abbrev ... := Int` だった。そのため、牌集合キーを `MeldedHand.decode` に渡す、または鳴き込みキーを `TileCollection.decode` に渡すコードが型検査を通り、異なる空間のキー同士もそのまま比較できた。
 
 仕様では両キー空間を別扱いにし、相互比較を禁止している。内部表現として `Int` を使う場合でも、公開APIでは別の構造体または不透明型にし、必要な整数変換を明示させるべきである。
+
+**部分対応:** 牌集合キーは`TileCountsKey`という別の構造体になった。鳴き込みキーの別型化は未対応である。
 
 ### [P2] INT64範囲と可逆性の契約が実装で保証されていない
 

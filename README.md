@@ -7,6 +7,7 @@ The Lean source projects remain independent repositories:
 - `mahjong-hand-hash`
 - `mahjong-shanten-calculation`
 - `mahjong-wait-classification`
+- `mahjong-score-calculation`
 
 Clone those repositories as sibling directories under this workspace, then open
 `mahjong.code-workspace` in VS Code. Their source directories are ignored by
@@ -26,7 +27,7 @@ The [hand perfect-hash plan](docs/hand-perfect-hash-plan.md) specifies
 reversible keys for tile collections and hands with fixed melds.
 The [HandSnapshot review](docs/hand-snapshot-review-2026-11-26.md) assesses
 the shared hand model and its boundaries for decision-record databases.
-The [point-calculation repository design](docs/point-calculation-repository-design.md)
-proposes a separate consumer of Core's `HandSnapshot` for Japanese mahjong scoring.
+The [point-calculation repository design](https://github.com/bgnori/mahjong-score-calculation/blob/main/docs/point-calculation-repository-design.md)
+describes the scoring consumer of Core's `HandSnapshot`.
 The [CI metrics dashboard](https://bgnori.github.io/mahjong-workspace/dashboard/)
 reads the public `/ci/` data published by each source repository.

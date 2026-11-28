@@ -60,7 +60,75 @@ consumerを維持しつつ、13枚相当・14枚相当をどちらも`PhasedHand
 比較して実装前に決定する。いずれの場合も段階を含む構造の意味はCoreで共有し、
 キーや計算への使い方はconsumerで扱う。
 
-### 決定: 14枚相当を`HandSnapshot`に残す
+## アクションと段階の遷移図
+
+次は**一人のプレイヤーの牌姿**を追う概念図であり、局全体の状態機械ではない。
+矢印のラベルは遷移を引き起こすイベント、ノードはそのイベント後の`HandPhase`を
+表す。`beforeDraw`は他家の手番や打牌への応答を待つ間も含み、「直ちに自分が
+ツモできる」ことを意味しない。ルール上の条件を満たし、鳴きの優先順位などが
+確定したときに限り該当する矢印を進む。
+
+```mermaid
+stateDiagram-v2
+    state "beforeDraw：13枚相当" as BeforeDraw
+    state "afterDraw：14枚相当" as AfterDraw
+    state "afterChi：14枚相当" as AfterChi
+    state "afterPon：14枚相当" as AfterPon
+    state "afterDaiminkan：13枚相当" as AfterDaiminkan
+    state "afterAnkan：13枚相当" as AfterAnkan
+    state "afterKakan：13枚相当" as AfterKakan
+    state "暗槓宣言・判断窓（型の対象外）" as AnkanPending
+    state "加槓宣言・搶槓判断窓（型の対象外）" as KakanPending
+    state "局の終了（牌姿外）" as RoundEnd
+
+    BeforeDraw --> AfterDraw: 自分の通常ツモ
+    BeforeDraw --> AfterChi: 他家の打牌にチー成立
+    BeforeDraw --> AfterPon: 他家の打牌にポン成立
+    BeforeDraw --> AfterDaiminkan: 他家の打牌に大明槓成立
+    AfterDraw --> BeforeDraw: 打牌
+    AfterChi --> BeforeDraw: 打牌
+    AfterPon --> BeforeDraw: 打牌
+    AfterDraw --> AnkanPending: 暗槓宣言
+    AfterDraw --> KakanPending: 加槓宣言
+    AnkanPending --> AfterAnkan: 暗槓確定
+    KakanPending --> AfterKakan: 加槓確定
+    AfterDaiminkan --> AfterDraw: 嶺上牌取得
+    AfterAnkan --> AfterDraw: 嶺上牌取得
+    AfterKakan --> AfterDraw: 嶺上牌取得
+    AfterDraw --> RoundEnd: ツモ和了
+    BeforeDraw --> RoundEnd: 他家の打牌にロン和了
+    AnkanPending --> RoundEnd: 搶槓等で局終了
+    KakanPending --> RoundEnd: 搶槓等で局終了
+```
+
+図中の「判断窓」と「局の終了」は`HandPhase`の候補ではない。槓宣言から確定までの
+状態、搶槓の可否と処理は局面・イベント層の責務であり、暗槓に対する搶槓等は
+適用ルールによる。大明槓についても、宣言・優先順位の解決・成立の間の状態は
+図の`afterDaiminkan`には含まれない。局の終了は和了・流局等によっても発生し得る。
+`unknown`は入力情報の欠落を表すため図から省略し、自動的な遷移先とみなさない。
+配牌完了直後の親や局開始・終了処理も、この図から決めない。
+
+図は牌姿を変化させる代表的なイベントを示す。他家のツモ・打牌や見送りなど、
+自分の牌姿を変えないイベント、立直宣言や槓ドラ公開など局面に影響するイベントも
+存在するが、`HandPhase`だけではその処理順序や合法性を判断できない。
+打牌時の立直や、鳴いた牌に関する制限などもルール・履歴側で扱う。
+
+| イベント | 牌姿への変更 | 結果の段階 |
+|---|---|---|
+| 通常ツモ・嶺上牌取得 | 手元に取得した`Tile37`を1枚加える | `afterDraw`に同じ牌を指定 |
+| 打牌 | 手元から捨てた`Tile37`を1枚除く。ツモ切り／手出しは打牌結果に記録 | `beforeDraw` |
+| チー・ポン成立 | 手元から使った2枚を除き、他家の打牌を含む3枚の固定面子を追加 | `afterChi` / `afterPon`に面子と鳴いた牌を指定 |
+| 大明槓成立 | 手元から使った3枚を除き、他家の打牌を含む4枚の固定面子を追加 | `afterDaiminkan`に面子と鳴いた牌を指定 |
+| 暗槓確定 | 手元から4枚を除き、その4枚の暗槓を追加 | `afterAnkan` |
+| 加槓確定 | 手元から追加の1枚を除き、元のポンを加槓に置き換える | `afterKakan` |
+| 和了・流局 | 局の終了として扱う。結果や得点などは局面側に保持 | `HandPhase`の対象外 |
+
+これらの操作では実際に移動した37種の牌を用い、手元と面子の間で重複計上しない。
+打牌がツモ切りかどうかはイベントから記録し、ツモ牌と捨て牌の牌種が一致した
+というだけでは決めない。図に矢印があることは、立直後の槓や食い替えを含む
+個々のアクションの合法性を保証しない。
+
+## 決定: 14枚相当を`HandSnapshot`に残す
 
 `HandSnapshot`は引き続き13枚相当と14枚相当の両方を表し、`standing`はツモ牌を
 含む現在の手元の全牌を数える。固定面子数を`m`とすると、通常のツモ後は

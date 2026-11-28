@@ -1,5 +1,6 @@
 [
   "mahjong-domain-core",
+  "mahjong-score-calculation",
   "mahjong-shanten-calculation",
   "mahjong-wait-classification"
 ]

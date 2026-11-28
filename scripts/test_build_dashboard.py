@@ -13,7 +13,9 @@ class DashboardBuildTest(unittest.TestCase):
             site = Path(temporary)
             build_dashboard.build(site, assets)
             self.assertTrue((site / "dashboard" / "metrics.js").is_file())
-            self.assertEqual(len(json.loads((site / "dashboard" / "repositories.json").read_text())), 3)
+            repositories = json.loads((site / "dashboard" / "repositories.json").read_text())
+            self.assertEqual(len(repositories), 4)
+            self.assertIn("mahjong-score-calculation", repositories)
             self.assertTrue((site / "index.html").is_file())
 
     def test_reserved_dashboard_collision_is_rejected(self):

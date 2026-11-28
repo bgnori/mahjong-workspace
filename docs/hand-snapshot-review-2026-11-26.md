@@ -5,7 +5,8 @@
 対象: Core `f647dc8`、hand-hash `9571c12`、シャンテン `747352f`
 
 関連: [共有牌姿表現の設計](./shared-hand-representation-design.md)、
-[牌姿キーの計画](./hand-perfect-hash-plan.md)
+[牌姿キーの計画](./hand-perfect-hash-plan.md)、
+[ツモ・鳴き・槓を区別する牌姿の設計案](./hand-snapshot-phase-design.md)
 
 ## 結論
 

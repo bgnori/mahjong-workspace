@@ -26,5 +26,7 @@ The [hand perfect-hash plan](docs/hand-perfect-hash-plan.md) specifies
 reversible keys for tile collections and hands with fixed melds.
 The [HandSnapshot review](docs/hand-snapshot-review-2026-11-26.md) assesses
 the shared hand model and its boundaries for decision-record databases.
+The [point-calculation repository design](docs/point-calculation-repository-design.md)
+proposes a separate consumer of Core's `HandSnapshot` for Japanese mahjong scoring.
 The [CI metrics dashboard](https://bgnori.github.io/mahjong-workspace/dashboard/)
 reads the public `/ci/` data published by each source repository.
